@@ -18,7 +18,7 @@ class Bee extends SpriteAnimationComponent with TapCallbacks {
        _orbitAngle = initialOrbitAngle,
        super(size: displaySize, anchor: Anchor.center);
 
-  Vector2 _orbitCenter;
+  final Vector2 _orbitCenter;
   double _orbitAngle;
   final double orbitRadius;
   final double angularSpeed;

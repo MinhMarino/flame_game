@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 class HeartsHud extends TextComponent {
   HeartsHud({
     required this.maxLives,
-    required int lives,
+    required this._lives,
     required super.position,
-  }) : _lives = lives,
-       super(
+  }) : super(
          anchor: Anchor.topLeft,
          priority: 10,
          textRenderer: TextPaint(
