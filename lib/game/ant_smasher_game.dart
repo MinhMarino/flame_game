@@ -144,8 +144,8 @@ class AntSmasherGame extends FlameGame with TapCallbacks {
   }
 
   void _spawnAnt() {
-    const antScale = 0.42;
-    final speed = 70 + _random.nextDouble() * 40 + _gameTime * 0.35;
+    const antScale = 0.28;
+    final speed = 140 + _random.nextDouble() * 60 + _gameTime * 0.6;
 
     add(
       Ant(
