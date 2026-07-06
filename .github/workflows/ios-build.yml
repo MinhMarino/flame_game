@@ -1,14 +1,7 @@
+# Paused: run manually from Actions tab when iOS build is needed again.
 name: iOS Build
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 concurrency:
@@ -52,7 +45,6 @@ jobs:
   build-ipa:
     name: Build signed IPA
     needs: validate
-    if: github.event_name != 'pull_request'
     runs-on: macos-latest
     timeout-minutes: 45
 

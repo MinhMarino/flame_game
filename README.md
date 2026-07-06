@@ -25,7 +25,8 @@ flutter run -d chrome
 - `lib/game/ant_smasher_game.dart` — Ant smasher game logic
 - `lib/game/components/` — Crawler, floating score text
 - `.github/workflows/deploy-web.yml` — Deploy web build to GitHub Pages
-- `.github/workflows/ios-build.yml` — CI workflow for iOS builds
+- `.github/workflows/android-build.yml` — Build Android APK on push
+- `.github/workflows/ios-build.yml` — iOS build (paused, manual only)
 - `scripts/prepare-ios-secrets.sh` — Helper to encode signing files for GitHub Secrets
 
 ## GitHub Pages (Web)
@@ -34,7 +35,23 @@ Every push to `main` builds and deploys the web version automatically.
 
 Live URL: https://minhmarino.github.io/flame_game/
 
-## GitHub Actions (iOS)
+## GitHub Actions (Android APK)
+
+Every push to `main` builds a release APK automatically.
+
+1. Go to **Actions** → **Android Build** → latest run
+2. Download artifact `flame-game-apk-<run_number>`
+3. Copy `app-release.apk` to Android phone and install
+
+Notes:
+
+- APK is signed with debug key for testing (fine for sideload install)
+- Enable **Install unknown apps** on Android if prompted
+- iOS workflow is **paused** (manual run only from Actions tab)
+
+## GitHub Actions (iOS, paused)
+
+iOS builds no longer run automatically. Start **iOS Build** manually from the Actions tab when needed.
 
 The workflow has two jobs:
 
