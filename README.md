@@ -1,6 +1,8 @@
-# Flame Game
+# Ant Smasher (Flame Game)
 
-Flutter game starter using [Flame](https://flame-engine.org/) with GitHub Actions for iOS CI builds.
+Flutter + Flame ant smashing game. Play on the web or build for iOS.
+
+**Play online:** https://minhmarino.github.io/flame_game/
 
 ## Requirements
 
@@ -14,15 +16,23 @@ Flutter game starter using [Flame](https://flame-engine.org/) with GitHub Action
 ```bash
 cd flame_game
 flutter pub get
-flutter run
+flutter run -d chrome
 ```
 
 ## Project structure
 
 - `lib/main.dart` — App entry point with `GameWidget`
-- `lib/game/flame_starter_game.dart` — Base Flame game class
+- `lib/game/ant_smasher_game.dart` — Ant smasher game logic
+- `lib/game/components/` — Crawler, floating score text
+- `.github/workflows/deploy-web.yml` — Deploy web build to GitHub Pages
 - `.github/workflows/ios-build.yml` — CI workflow for iOS builds
 - `scripts/prepare-ios-secrets.sh` — Helper to encode signing files for GitHub Secrets
+
+## GitHub Pages (Web)
+
+Every push to `main` builds and deploys the web version automatically.
+
+Live URL: https://minhmarino.github.io/flame_game/
 
 ## GitHub Actions (iOS)
 

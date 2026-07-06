@@ -2,7 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'game/flame_starter_game.dart';
+import 'game/ant_smasher_game.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,13 +21,18 @@ class FlameGameApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flame Game',
+      title: 'Ant Smasher',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: GameWidget(game: FlameStarterGame()),
+      home: GameWidget(
+        game: AntSmasherGame(),
+        loadingBuilder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
     );
   }
 }
