@@ -111,7 +111,9 @@ class AntSmasherGame extends FlameGame {
     }
 
     final spawnBee = _random.nextDouble() < min(0.22, 0.08 + _gameTime * 0.004);
-    final animation = spawnBee ? _beeFlyAnimation.clone() : _antWalkAnimation.clone();
+    final animation = spawnBee
+        ? _beeFlyAnimation.clone()
+        : _antWalkAnimation.clone();
     final speed = spawnBee
         ? 95 + _random.nextDouble() * 45
         : 55 + _random.nextDouble() * 35 + _gameTime * 0.4;

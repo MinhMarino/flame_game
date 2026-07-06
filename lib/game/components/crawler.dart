@@ -11,10 +11,7 @@ class Crawler extends SpriteAnimationComponent with TapCallbacks {
     required this.velocity,
     required this.points,
     required Vector2 displaySize,
-  }) : super(
-          size: displaySize,
-          anchor: Anchor.center,
-        );
+  }) : super(size: displaySize, anchor: Anchor.center);
 
   final Vector2 velocity;
   final int points;
@@ -32,7 +29,8 @@ class Crawler extends SpriteAnimationComponent with TapCallbacks {
     }
 
     final margin = size.x;
-    final outOfBounds = position.x < -margin ||
+    final outOfBounds =
+        position.x < -margin ||
         position.x > game.size.x + margin ||
         position.y < -margin ||
         position.y > game.size.y + margin;

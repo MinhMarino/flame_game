@@ -29,9 +29,8 @@ class FlameGameApp extends StatelessWidget {
       ),
       home: GameWidget(
         game: AntSmasherGame(),
-        loadingBuilder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loadingBuilder: (context) =>
+            const Center(child: CircularProgressIndicator()),
       ),
     );
   }
