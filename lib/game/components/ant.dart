@@ -5,37 +5,31 @@ import 'package:flame/events.dart';
 
 import '../ant_smasher_game.dart';
 
-class Crawler extends SpriteAnimationComponent with TapCallbacks {
-  Crawler({
+class Ant extends SpriteAnimationComponent with TapCallbacks {
+  Ant({
     required super.animation,
-    required this.velocity,
-    required this.points,
+    required this.speed,
     required Vector2 displaySize,
   }) : super(size: displaySize, anchor: Anchor.center);
 
-  final Vector2 velocity;
-  final int points;
+  final double speed;
+
+  int get points => 1;
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    position += velocity * dt;
-    angle = atan2(velocity.y, velocity.x) + pi / 2;
+    position.y += speed * dt;
+    angle = pi;
 
     final game = findGame();
-    if (game == null) {
+    if (game == null || game is! AntSmasherGame) {
       return;
     }
 
-    final margin = size.x;
-    final outOfBounds =
-        position.x < -margin ||
-        position.x > game.size.x + margin ||
-        position.y < -margin ||
-        position.y > game.size.y + margin;
-
-    if (outOfBounds) {
+    if (position.y > game.size.y + size.y * 0.5) {
+      game.onCrawlerEscaped(this);
       removeFromParent();
     }
   }
