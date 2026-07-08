@@ -4,11 +4,11 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 
-import 'kitchen_enemies.dart';
+import 'level_enemy.dart';
 
 /// Giant Spider boss — colored box placeholder, crawls slowly top to bottom.
-class GiantSpider extends KitchenEnemy {
-  GiantSpider({
+class GiantSpiderEnemy extends LevelEnemy {
+  GiantSpiderEnemy({
     required super.stats,
     required super.random,
     required super.startPosition,
@@ -50,7 +50,7 @@ class GiantSpider extends KitchenEnemy {
       gameRef.triggerScreenShake();
       gameRef.playSmashSound();
       onBossDefeated();
-      gameRef.onKitchenEnemyDefeated(this);
+      gameRef.onSpawnedEnemyDefeated(this);
       removeFromParent();
     }
   }

@@ -5,14 +5,16 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import '../enemies/ant_enemy.dart';
+import '../enemies/bee_enemy.dart';
+import '../enemies/enemy_assets.dart';
+import '../enemies/enemy_factory.dart';
+import '../enemies/spawned_enemy.dart';
 import '../level_data/models/level_models.dart';
 import '../level_data/world_registry.dart';
 import '../services/audio_manager.dart';
 import '../worlds/kitchen/data/kitchen_level_data.dart';
-import '../worlds/kitchen/enemies/kitchen_enemies.dart';
 import '../worlds/kitchen/kitchen_gameplay_controller.dart';
-import 'components/ant.dart';
-import 'components/bee.dart';
 import 'components/floating_text.dart';
 import 'components/game_over_label.dart';
 import 'components/hearts_hud.dart';
@@ -35,11 +37,10 @@ class AntSmasherGame extends FlameGame
   final LevelCompleteCallback? onLevelComplete;
   final LevelFailedCallback? onLevelFailed;
 
-  static const int _frameCount = 16;
-  static const double _frameSize = 313;
   static const int endlessMaxLives = 10;
 
   final Random _random;
+  late final EnemyFactory _enemyFactory;
   late final SpriteAnimation _antWalkAnimation;
   late final SpriteAnimation _beeFlyAnimation;
   late final TextComponent _scoreText;
@@ -67,8 +68,10 @@ class AntSmasherGame extends FlameGame
   bool get isGameOver => _gameOver;
   bool get isLevelEnded => _levelEnded;
 
-  Iterable<KitchenEnemy> get kitchenEnemies =>
-      children.whereType<KitchenEnemy>();
+  EnemyFactory get enemyFactory => _enemyFactory;
+
+  Iterable<SpawnedEnemy> get spawnedEnemies =>
+      children.whereType<SpawnedEnemy>();
 
   @override
   bool get canPause => !_gameOver && !_levelEnded;
@@ -106,16 +109,6 @@ class AntSmasherGame extends FlameGame
       _spawnInterval = level!.spawnInterval;
       _levelSession = LevelSession(level!)..start();
       _levelSession!.syncLives(lives: _lives, max: _maxLives);
-
-      if (isKitchenWorld) {
-        final kitchenConfig = KitchenLevelData.forLevel(level!.levelInWorld);
-        _kitchenController = KitchenGameplayController(
-          game: this,
-          config: kitchenConfig,
-          random: _random,
-          session: _levelSession!,
-        );
-      }
     }
 
     await images.loadAll([
@@ -127,7 +120,22 @@ class AntSmasherGame extends FlameGame
     _antWalkAnimation = _loadWalkAnimation('ant_walk_sheet.png');
     _beeFlyAnimation = _loadWalkAnimation('bee_fly_sheet.png');
 
-    if (isKitchenWorld && _kitchenController != null) {
+    _enemyFactory = EnemyFactory(
+      game: this,
+      random: _random,
+      antWalkAnimation: _antWalkAnimation,
+      beeFlyAnimation: _beeFlyAnimation,
+    );
+
+    if (isKitchenWorld && level != null && _levelSession != null) {
+      final kitchenConfig = KitchenLevelData.forLevel(level!.levelInWorld);
+      _kitchenController = KitchenGameplayController(
+        game: this,
+        config: kitchenConfig,
+        random: _random,
+        session: _levelSession!,
+        enemyFactory: _enemyFactory,
+      );
       _kitchenController!.onLoad();
     }
 
@@ -185,9 +193,9 @@ class AntSmasherGame extends FlameGame
     return SpriteAnimation.fromFrameData(
       sheet,
       SpriteAnimationData.sequenced(
-        amount: _frameCount,
+        amount: EnemyAssets.frameCount,
         stepTime: 0.07,
-        textureSize: Vector2(_frameSize, _frameSize),
+        textureSize: Vector2(EnemyAssets.frameSize, EnemyAssets.frameSize),
       ),
     );
   }
@@ -293,7 +301,8 @@ class AntSmasherGame extends FlameGame
       return false;
     }
 
-    final activeEnemies = children.where((c) => c is Ant || c is Bee).length;
+    final activeEnemies =
+        children.where((c) => c is AntEnemy || c is BeeEnemy).length;
     if (isLevelMode) {
       return activeEnemies < level!.maxSimultaneousEnemies;
     }
@@ -330,57 +339,49 @@ class AntSmasherGame extends FlameGame
   }
 
   void _spawnAnt({double? speedMin, double? speedMax}) {
-    const antScale = 0.28;
     final minSpeed = speedMin ?? (140 + _gameTime * 0.6);
     final maxSpeed = speedMax ?? (200 + _gameTime * 0.6);
     final speed = minSpeed + _random.nextDouble() * (maxSpeed - minSpeed);
+    final antSize = EnemyAssets.antDisplaySize();
 
     add(
-      Ant(
-          animation: _antWalkAnimation.clone(),
-          speed: speed,
-          displaySize: Vector2.all(_frameSize * antScale),
-        )
-        ..position = Vector2(
+      _enemyFactory.createEndlessAnt(
+        speed: speed,
+        position: Vector2(
           _random.nextDouble() * size.x,
-          -_frameSize * antScale * 0.5,
+          -antSize * 0.5,
         ),
+      ),
     );
   }
 
   void _spawnBee({required bool isBoss}) {
-    final beeScale = isBoss ? 0.6 : 0.45;
     final startX = _random.nextDouble() * size.x;
     final speedMultiplier = isBoss ? 1.5 : 1.0;
 
     add(
-      Bee(
-        animation: _beeFlyAnimation.clone(),
-        orbitCenter: Vector2(startX, -40),
-        orbitRadius: (isBoss ? 40 : 28) + _random.nextDouble() * 24,
-        angularSpeed: (2.2 + _random.nextDouble() * 1.4) * speedMultiplier,
-        driftSpeed: (28 + _random.nextDouble() * 18) * speedMultiplier,
-        displaySize: Vector2.all(_frameSize * beeScale),
-        initialOrbitAngle: _random.nextDouble() * pi * 2,
+      _enemyFactory.createBee(
         isBoss: isBoss,
+        startPosition: Vector2(startX, 0),
+        speedMultiplier: speedMultiplier,
       ),
     );
   }
 
   void _spawnBossBee() => _spawnBee(isBoss: true);
 
-  void onKitchenEnemyDefeated(KitchenEnemy enemy, {bool skipScore = false}) {
+  void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
     _kitchenController?.onEnemyDefeated(enemy, skipScore: skipScore);
     add(
       FloatingText(
         text: '+${enemy.stats.scoreValue}',
-        position: enemy.position.clone(),
+        position: (enemy as PositionComponent).position.clone(),
       ),
     );
     notifyListeners();
   }
 
-  void onKitchenEnemyEscaped(KitchenEnemy enemy) {
+  void onSpawnedEnemyEscaped(SpawnedEnemy enemy) {
     _kitchenController?.onEnemyEscaped(enemy);
   }
 
@@ -408,17 +409,17 @@ class AntSmasherGame extends FlameGame
     }
 
     final points = switch (crawler) {
-      Ant _ => 1,
-      Bee bee => bee.isBoss ? 5 : 3,
+      AntEnemy _ => 1,
+      BeeEnemy bee => bee.isBoss ? 5 : 3,
       _ => 0,
     };
 
     _score += points;
     _scoreText.text = 'Score: $_score';
 
-    if (crawler is Ant) {
+    if (crawler is AntEnemy) {
       _levelSession?.onAntEliminated(points: points);
-    } else if (crawler is Bee) {
+    } else if (crawler is BeeEnemy) {
       _levelSession?.onBeeEliminated(points: points);
     }
 
@@ -481,10 +482,8 @@ class AntSmasherGame extends FlameGame
   }
 
   void _clearEnemies() {
-    for (final enemy in kitchenEnemies.toList()) {
-      enemy.removeFromParent();
-    }
-    for (final enemy in children.where((c) => c is Ant || c is Bee).toList()) {
+    for (final enemy
+        in children.where((c) => c is SpawnedEnemy || c is BeeEnemy).toList()) {
       enemy.removeFromParent();
     }
   }

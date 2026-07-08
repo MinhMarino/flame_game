@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'kitchen_enemy_kind.dart';
+import 'enemy_kind.dart';
 
 /// Visual state for multi-hit enemies. Replace tint/label with sprites later.
 class EnemyVisualStage {
@@ -15,8 +15,8 @@ class EnemyVisualStage {
   final String? spriteAsset;
 }
 
-class KitchenEnemyStats {
-  const KitchenEnemyStats({
+class EnemyStats {
+  const EnemyStats({
     required this.kind,
     required this.displayName,
     required this.maxHp,
@@ -33,7 +33,7 @@ class KitchenEnemyStats {
     this.damageStages,
   });
 
-  final KitchenEnemyKind kind;
+  final EnemyKind kind;
   final String displayName;
   final int maxHp;
   final double speed;
@@ -46,8 +46,6 @@ class KitchenEnemyStats {
   final double angryDurationSeconds;
   final double nearMissRadius;
   final bool isBoss;
-
-  /// Per-hit visuals. Length should equal [maxHp]. Index 0 = full health.
   final List<EnemyVisualStage>? damageStages;
 
   EnemyVisualStage visualForHp(int currentHp) {
@@ -60,9 +58,9 @@ class KitchenEnemyStats {
   }
 }
 
-class KitchenSpawnEntry {
-  const KitchenSpawnEntry({required this.kind, required this.weight});
+class EnemySpawnEntry {
+  const EnemySpawnEntry({required this.kind, required this.weight});
 
-  final KitchenEnemyKind kind;
+  final EnemyKind kind;
   final double weight;
 }

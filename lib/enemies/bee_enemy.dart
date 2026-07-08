@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 
-import '../ant_smasher_game.dart';
+import '../game/ant_smasher_game.dart';
 
-class Bee extends SpriteAnimationComponent with TapCallbacks {
-  Bee({
+class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
+  BeeEnemy({
     required super.animation,
     required Vector2 orbitCenter,
     required this.orbitRadius,

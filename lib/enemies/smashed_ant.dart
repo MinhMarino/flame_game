@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 
-import '../ant_smasher_game.dart';
+import '../game/ant_smasher_game.dart';
 
 class SmashedAnt extends SpriteComponent with HasGameReference<AntSmasherGame> {
   SmashedAnt({required super.position, required super.size})

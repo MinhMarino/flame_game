@@ -2,14 +2,14 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 
+import '../../../enemies/data/enemy_data.dart';
+import '../../../enemies/enemy_factory.dart';
+import '../../../enemies/level_enemy_variants.dart';
+import '../../../enemies/models/enemy_kind.dart';
+import '../../../enemies/spawned_enemy.dart';
 import '../../../game/ant_smasher_game.dart';
 import '../../../game/level_session.dart';
 import 'components/fly_swatter.dart';
-import 'data/kitchen_enemy_data.dart';
-import 'enemies/giant_spider.dart';
-import 'enemies/kitchen_enemies.dart';
-import 'models/kitchen_enemy_kind.dart';
-import 'models/kitchen_enemy_stats.dart';
 import 'models/kitchen_level_config.dart';
 
 /// Handles World 1 spawning, boss phases, and fly swatter logic.
@@ -19,11 +19,13 @@ class KitchenGameplayController {
     required this.config,
     required this.random,
     required this.session,
+    required this.enemyFactory,
   });
 
   final AntSmasherGame game;
   final KitchenLevelConfig config;
   final Random random;
+  final EnemyFactory enemyFactory;
   LevelSession session;
 
   double _spawnTimer = 0;
@@ -41,11 +43,11 @@ class KitchenGameplayController {
   bool get isBossLevel => config.isBossLevel;
   bool get bossAlive => _bossSpawned && !_bossDefeated;
 
-  int get _activeBabyCount => game.kitchenEnemies
-      .where((e) => e.kind == KitchenEnemyKind.babySpider)
+  int get _activeBabyCount => game.spawnedEnemies
+      .where((e) => e.kind == EnemyKind.babySpider)
       .length;
 
-  int get activeEnemyCount => game.kitchenEnemies.length;
+  int get activeEnemyCount => game.spawnedEnemies.length;
 
   Vector2 get shakeOffset => _shakeOffset;
 
@@ -55,7 +57,6 @@ class KitchenGameplayController {
       return;
     }
 
-    // Level 1: instant action so the first taps feel rewarding.
     if (config.levelInWorld == 1) {
       for (var i = 0; i < 3; i++) {
         Future.delayed(Duration(milliseconds: i * 300), () {
@@ -141,7 +142,7 @@ class KitchenGameplayController {
 
     _activePickup =
         FlySwatterPickup(
-            radius: KitchenEnemyData.flySwatterRadius.toDouble(),
+            radius: EnemyData.flySwatterRadius.toDouble(),
             onActivated: _activateFlySwatter,
           )
           ..position = Vector2(
@@ -158,7 +159,7 @@ class KitchenGameplayController {
 
     game.add(
       FlySwatterSplash(
-        radius: KitchenEnemyData.flySwatterRadius.toDouble(),
+        radius: EnemyData.flySwatterRadius.toDouble(),
         position: center.clone(),
         onComplete: () {},
       ),
@@ -166,11 +167,12 @@ class KitchenGameplayController {
 
     game.playSmashSound();
 
-    for (final enemy in game.kitchenEnemies.toList()) {
-      final distance = enemy.position.distanceTo(center);
-      if (distance <= KitchenEnemyData.flySwatterRadius) {
+    for (final enemy in game.spawnedEnemies.toList()) {
+      final component = enemy as PositionComponent;
+      final distance = component.position.distanceTo(center);
+      if (distance <= EnemyData.flySwatterRadius) {
         if (enemy.isBoss) {
-          enemy.takeDamage(KitchenEnemyData.flySwatterBossDamage);
+          enemy.takeDamage(EnemyData.flySwatterBossDamage);
         } else {
           enemy.takeDamage(enemy.currentHp);
         }
@@ -188,7 +190,7 @@ class KitchenGameplayController {
     _spawnedCount++;
   }
 
-  KitchenEnemyKind _pickSpawnKind() {
+  EnemyKind _pickSpawnKind() {
     final totalWeight = config.spawnTable.fold<double>(
       0,
       (sum, entry) => sum + entry.weight,
@@ -204,63 +206,23 @@ class KitchenGameplayController {
     return config.spawnTable.last.kind;
   }
 
-  Vector2 _spawnPositionFor(KitchenEnemyStats stats) {
-    return Vector2(
-      stats.boxWidth * 0.5 +
-          random.nextDouble() * (game.size.x - stats.boxWidth),
-      -stats.boxHeight * 0.5,
-    );
-  }
-
-  void _spawnEnemy(KitchenEnemyKind kind) {
+  void _spawnEnemy(EnemyKind kind) {
     if (game.size.x <= 0) {
       return;
     }
 
-    final stats = KitchenEnemyData.forKind(kind);
-    final startPosition = _spawnPositionFor(stats);
+    if (kind == EnemyKind.giantSpider) {
+      throw StateError('Use _spawnBoss for giant spider');
+    }
 
-    final speedScale = config.enemySpeedMultiplier;
+    final enemy = enemyFactory.createLevelEnemy(
+      kind: kind,
+      antWeaveIntensity: config.antWeaveIntensity,
+      flyWeaveIntensity: config.flyWeaveIntensity,
+      speedScale: config.enemySpeedMultiplier,
+    );
 
-    final KitchenEnemy enemy = switch (kind) {
-      KitchenEnemyKind.blackAnt => BlackAntEnemy(
-        stats: stats,
-        random: random,
-        startPosition: startPosition,
-        weaveIntensity: config.antWeaveIntensity,
-        speedScale: speedScale,
-      ),
-      KitchenEnemyKind.houseFly => HouseFlyEnemy(
-        stats: stats,
-        random: random,
-        startPosition: startPosition,
-        weaveIntensity: config.flyWeaveIntensity,
-        speedScale: speedScale,
-      ),
-      KitchenEnemyKind.cockroach => CockroachEnemy(
-        stats: stats,
-        random: random,
-        startPosition: startPosition,
-        speedScale: speedScale,
-      ),
-      KitchenEnemyKind.babySpider => BabySpiderEnemy(
-        stats: stats,
-        random: random,
-        startPosition: startPosition,
-        speedScale: speedScale * 1.1,
-      ),
-      KitchenEnemyKind.giantSpider => throw StateError(
-        'Use _spawnBoss for giant spider',
-      ),
-      _ => KitchenEnemy(
-        stats: stats,
-        random: random,
-        startPosition: startPosition,
-        speedScale: speedScale,
-      ),
-    };
-
-    game.add(enemy);
+    game.add(enemy as Component);
   }
 
   void _spawnBoss() {
@@ -269,29 +231,33 @@ class KitchenGameplayController {
     }
 
     _bossSpawned = true;
-    final stats = KitchenEnemyData.forKind(KitchenEnemyKind.giantSpider);
+    final stats = EnemyData.forKind(EnemyKind.giantSpider);
 
-    game.add(
-      GiantSpider(
-        stats: stats,
-        random: random,
-        startPosition: Vector2(game.size.x / 2, -stats.boxHeight * 0.5),
-        onBossDefeated: _onBossDefeated,
-        speedScale: config.enemySpeedMultiplier,
-      ),
+    final enemy = enemyFactory.createLevelEnemy(
+      kind: EnemyKind.giantSpider,
+      antWeaveIntensity: config.antWeaveIntensity,
+      flyWeaveIntensity: config.flyWeaveIntensity,
+      speedScale: config.enemySpeedMultiplier,
+      onBossDefeated: _onBossDefeated,
     );
+
+    (enemy as PositionComponent).position = Vector2(
+      game.size.x / 2,
+      -stats.boxHeight * 0.5,
+    );
+    game.add(enemy as Component);
   }
 
   void _onBossDefeated() {
     _bossDefeated = true;
-    _babySpidersToSpawn = KitchenEnemyData.babySpiderSpawnCount;
+    _babySpidersToSpawn = EnemyData.babySpiderSpawnCount;
     _babySpidersDefeated = 0;
     triggerScreenShake();
 
-    for (var i = 0; i < KitchenEnemyData.babySpiderSpawnCount; i++) {
+    for (var i = 0; i < EnemyData.babySpiderSpawnCount; i++) {
       Future.delayed(Duration(milliseconds: i * 120), () {
         if (game.isLoaded && !game.isLevelEnded) {
-          _spawnEnemy(KitchenEnemyKind.babySpider);
+          _spawnEnemy(EnemyKind.babySpider);
         }
       });
     }
@@ -302,29 +268,31 @@ class KitchenGameplayController {
   }
 
   void handleNearMiss(Vector2 tapPosition) {
-    for (final enemy in game.kitchenEnemies) {
-      if (enemy is CockroachEnemy &&
-          enemy.position.distanceTo(tapPosition) <=
-              enemy.stats.nearMissRadius) {
-        enemy.triggerNearMiss();
+    for (final enemy in game.spawnedEnemies) {
+      if (enemy is CockroachEnemy) {
+        final component = enemy as PositionComponent;
+        if (component.position.distanceTo(tapPosition) <=
+            enemy.stats.nearMissRadius) {
+          enemy.triggerNearMiss();
+        }
       }
     }
   }
 
-  void onEnemyDefeated(KitchenEnemy enemy, {bool skipScore = false}) {
+  void onEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
     if (!skipScore) {
       session.onKitchenEnemyDefeated(enemy.stats.scoreValue);
     }
 
-    if (enemy.kind == KitchenEnemyKind.babySpider) {
+    if (enemy.kind == EnemyKind.babySpider) {
       _babySpidersDefeated++;
     }
 
     _checkWinCondition();
   }
 
-  void onEnemyEscaped(KitchenEnemy enemy) {
-    game.onCrawlerEscaped(enemy);
+  void onEnemyEscaped(SpawnedEnemy enemy) {
+    game.onCrawlerEscaped(enemy as PositionComponent);
   }
 
   void _checkWinCondition() {
@@ -350,8 +318,8 @@ class KitchenGameplayController {
     _activePickup?.removeFromParent();
     _activePickup = null;
 
-    for (final enemy in game.kitchenEnemies.toList()) {
-      enemy.removeFromParent();
+    for (final enemy in game.spawnedEnemies.toList()) {
+      (enemy as PositionComponent).removeFromParent();
     }
 
     if (isBossLevel) {

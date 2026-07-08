@@ -1,4 +1,4 @@
-enum KitchenEnemyKind {
+enum EnemyKind {
   blackAnt,
   houseFly,
   cockroach,

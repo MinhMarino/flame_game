@@ -1,6 +1,6 @@
 import '../../../level_data/models/level_models.dart';
-import '../models/kitchen_enemy_kind.dart';
-import '../models/kitchen_enemy_stats.dart';
+import '../../../enemies/models/enemy_kind.dart';
+import '../../../enemies/models/enemy_stats.dart';
 import '../models/kitchen_level_config.dart';
 
 /// Handcrafted World 1 (Kitchen) — tower defense rounds with countdown timer.
@@ -23,7 +23,7 @@ class KitchenLevelData {
       enemySpeedMultiplier: 0.9,
       antWeaveIntensity: 0.55,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 1),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -46,7 +46,7 @@ class KitchenLevelData {
       enemySpeedMultiplier: 1.0,
       antWeaveIntensity: 0.62,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 1),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -70,8 +70,8 @@ class KitchenLevelData {
       flyWeaveIntensity: 0.5,
       antWeaveIntensity: 0.68,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.55),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.45),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.55),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.45),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -95,8 +95,8 @@ class KitchenLevelData {
       flyWeaveIntensity: 0.72,
       antWeaveIntensity: 0.74,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.3),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.7),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.3),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.7),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -122,9 +122,9 @@ class KitchenLevelData {
       enableFlySwatter: true,
       flySwatterCooldownSeconds: 28,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.25),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.35),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.cockroach, weight: 0.4),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.25),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.35),
+        EnemySpawnEntry(kind: EnemyKind.cockroach, weight: 0.4),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -150,9 +150,9 @@ class KitchenLevelData {
       enableFlySwatter: true,
       flySwatterCooldownSeconds: 30,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.15),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.4),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.cockroach, weight: 0.45),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.15),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.4),
+        EnemySpawnEntry(kind: EnemyKind.cockroach, weight: 0.45),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -178,10 +178,10 @@ class KitchenLevelData {
       enableFlySwatter: true,
       flySwatterCooldownSeconds: 32,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.1),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.3),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.cockroach, weight: 0.25),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.smallBeetle, weight: 0.35),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.1),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.3),
+        EnemySpawnEntry(kind: EnemyKind.cockroach, weight: 0.25),
+        EnemySpawnEntry(kind: EnemyKind.smallBeetle, weight: 0.35),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -207,10 +207,10 @@ class KitchenLevelData {
       enableFlySwatter: true,
       flySwatterCooldownSeconds: 34,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.1),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.25),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.cockroach, weight: 0.3),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.smallBeetle, weight: 0.35),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.1),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.25),
+        EnemySpawnEntry(kind: EnemyKind.cockroach, weight: 0.3),
+        EnemySpawnEntry(kind: EnemyKind.smallBeetle, weight: 0.35),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,
@@ -236,10 +236,10 @@ class KitchenLevelData {
       enableFlySwatter: true,
       flySwatterCooldownSeconds: 36,
       spawnTable: [
-        KitchenSpawnEntry(kind: KitchenEnemyKind.blackAnt, weight: 0.08),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.houseFly, weight: 0.27),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.cockroach, weight: 0.3),
-        KitchenSpawnEntry(kind: KitchenEnemyKind.smallBeetle, weight: 0.35),
+        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 0.08),
+        EnemySpawnEntry(kind: EnemyKind.houseFly, weight: 0.27),
+        EnemySpawnEntry(kind: EnemyKind.cockroach, weight: 0.3),
+        EnemySpawnEntry(kind: EnemyKind.smallBeetle, weight: 0.35),
       ],
       starRequirements: StarRequirements(
         oneStarScore: 0,

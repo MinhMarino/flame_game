@@ -1,5 +1,5 @@
 import '../../../level_data/models/level_models.dart';
-import 'kitchen_enemy_stats.dart';
+import '../../../enemies/models/enemy_stats.dart';
 
 class KitchenLevelConfig {
   const KitchenLevelConfig({
@@ -27,7 +27,7 @@ class KitchenLevelConfig {
   final double spawnInterval;
   final int maxSimultaneousEnemies;
   final int lives;
-  final List<KitchenSpawnEntry> spawnTable;
+  final List<EnemySpawnEntry> spawnTable;
   final StarRequirements starRequirements;
   final int? totalSpawnCap;
   final bool isBossLevel;

@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 
-import '../models/kitchen_enemy_kind.dart';
-import '../models/kitchen_enemy_stats.dart';
+import '../enemy_assets.dart';
+import '../models/enemy_kind.dart';
+import '../models/enemy_stats.dart';
 
-/// Configurable enemy stats for World 1. Tune values here — not in gameplay code.
-class KitchenEnemyData {
-  KitchenEnemyData._();
+/// Configurable enemy stats. Tune values here — not in gameplay code.
+class EnemyData {
+  EnemyData._();
 
   static const double baseAntSpeed = 115;
+  static const double _antSize =
+      EnemyAssets.frameSize * EnemyAssets.antDisplayScale;
 
-  static const Map<KitchenEnemyKind, KitchenEnemyStats> stats = {
-    KitchenEnemyKind.blackAnt: KitchenEnemyStats(
-      kind: KitchenEnemyKind.blackAnt,
+  static const Map<EnemyKind, EnemyStats> stats = {
+    EnemyKind.blackAnt: EnemyStats(
+      kind: EnemyKind.blackAnt,
       displayName: 'Black Ant',
       maxHp: 1,
       speed: baseAntSpeed,
       scoreValue: 1,
-      displayScale: 0.28,
-      boxWidth: 24,
-      boxHeight: 60,
+      displayScale: EnemyAssets.antDisplayScale,
+      boxWidth: _antSize,
+      boxHeight: _antSize,
       tint: Color(0xFF000000),
     ),
-    KitchenEnemyKind.houseFly: KitchenEnemyStats(
-      kind: KitchenEnemyKind.houseFly,
+    EnemyKind.houseFly: EnemyStats(
+      kind: EnemyKind.houseFly,
       displayName: 'House Fly',
       maxHp: 1,
       speed: baseAntSpeed * 1.6,
@@ -32,8 +35,8 @@ class KitchenEnemyData {
       boxHeight: 36,
       tint: Color(0xFF6B7280),
     ),
-    KitchenEnemyKind.cockroach: KitchenEnemyStats(
-      kind: KitchenEnemyKind.cockroach,
+    EnemyKind.cockroach: EnemyStats(
+      kind: EnemyKind.cockroach,
       displayName: 'Cockroach',
       maxHp: 3,
       speed: baseAntSpeed * 1.4,
@@ -63,8 +66,8 @@ class KitchenEnemyData {
         ),
       ],
     ),
-    KitchenEnemyKind.smallBeetle: KitchenEnemyStats(
-      kind: KitchenEnemyKind.smallBeetle,
+    EnemyKind.smallBeetle: EnemyStats(
+      kind: EnemyKind.smallBeetle,
       displayName: 'Small Beetle',
       maxHp: 5,
       speed: baseAntSpeed * 0.6,
@@ -74,8 +77,8 @@ class KitchenEnemyData {
       boxHeight: 48,
       tint: Color(0xFF065F46),
     ),
-    KitchenEnemyKind.giantSpider: KitchenEnemyStats(
-      kind: KitchenEnemyKind.giantSpider,
+    EnemyKind.giantSpider: EnemyStats(
+      kind: EnemyKind.giantSpider,
       displayName: 'Giant Spider',
       maxHp: 25,
       speed: baseAntSpeed * 0.4,
@@ -86,8 +89,8 @@ class KitchenEnemyData {
       tint: Color(0xFF7F1D1D),
       isBoss: true,
     ),
-    KitchenEnemyKind.babySpider: KitchenEnemyStats(
-      kind: KitchenEnemyKind.babySpider,
+    EnemyKind.babySpider: EnemyStats(
+      kind: EnemyKind.babySpider,
       displayName: 'Baby Spider',
       maxHp: 1,
       speed: baseAntSpeed * 2.0,
@@ -99,7 +102,7 @@ class KitchenEnemyData {
     ),
   };
 
-  static KitchenEnemyStats forKind(KitchenEnemyKind kind) => stats[kind]!;
+  static EnemyStats forKind(EnemyKind kind) => stats[kind]!;
 
   static const int flySwatterRadius = 120;
   static const int flySwatterBossDamage = 5;
