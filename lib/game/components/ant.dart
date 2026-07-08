@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 
 import '../ant_smasher_game.dart';
+import 'smashed_ant.dart';
 
 class Ant extends SpriteAnimationComponent with TapCallbacks {
   Ant({
@@ -37,9 +38,12 @@ class Ant extends SpriteAnimationComponent with TapCallbacks {
   @override
   void onTapDown(TapDownEvent event) {
     final game = findGame();
-    if (game is AntSmasherGame) {
-      game.registerHit(this);
+    if (game is! AntSmasherGame || !game.acceptsGameplayInput) {
+      return;
     }
+
+    game.add(SmashedAnt(position: position.clone(), size: size.clone()));
+    game.registerHit(this);
     removeFromParent();
   }
 }

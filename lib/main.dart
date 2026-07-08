@@ -1,11 +1,12 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'game/ant_smasher_game.dart';
+import 'screens/home_screen.dart';
+import 'services/level_progress_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LevelProgressService.instance.load();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
@@ -27,11 +28,7 @@ class FlameGameApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: GameWidget(
-        game: AntSmasherGame(),
-        loadingBuilder: (context) =>
-            const Center(child: CircularProgressIndicator()),
-      ),
+      home: const HomeScreen(),
     );
   }
 }

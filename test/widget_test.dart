@@ -9,5 +9,6 @@ void main() {
     await tester.pump();
 
     expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.text('Ant Smasher'), findsOneWidget);
   });
 }

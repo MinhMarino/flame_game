@@ -14,6 +14,7 @@ class Bee extends SpriteAnimationComponent with TapCallbacks {
     required this.driftSpeed,
     required Vector2 displaySize,
     double initialOrbitAngle = 0,
+    this.isBoss = false,
   }) : _orbitCenter = orbitCenter.clone(),
        _orbitAngle = initialOrbitAngle,
        super(size: displaySize, anchor: Anchor.center);
@@ -23,8 +24,9 @@ class Bee extends SpriteAnimationComponent with TapCallbacks {
   final double orbitRadius;
   final double angularSpeed;
   final double driftSpeed;
+  final bool isBoss;
 
-  int get points => 3;
+  int get points => isBoss ? 5 : 3;
 
   @override
   Future<void> onLoad() async {
@@ -61,9 +63,11 @@ class Bee extends SpriteAnimationComponent with TapCallbacks {
   @override
   void onTapDown(TapDownEvent event) {
     final game = findGame();
-    if (game is AntSmasherGame) {
-      game.registerHit(this);
+    if (game is! AntSmasherGame || !game.acceptsGameplayInput) {
+      return;
     }
+
+    game.registerHit(this);
     removeFromParent();
   }
 }
