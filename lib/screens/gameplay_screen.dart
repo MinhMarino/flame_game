@@ -8,6 +8,7 @@ import '../level_data/models/level_models.dart';
 import '../level_data/world_registry.dart';
 import '../services/audio_manager.dart';
 import '../services/level_progress_service.dart';
+import '../widgets/endless_spawn_test_bar.dart';
 import '../widgets/pause_menu_overlay.dart';
 import 'home_screen.dart';
 import 'level_complete_screen.dart';
@@ -186,6 +187,13 @@ class _GameplayScreenState extends State<GameplayScreen>
                   ),
                 ),
               ),
+            ),
+          if (!widget.isLevelMode)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: EndlessSpawnTestBar(game: _game),
             ),
         ],
       ),

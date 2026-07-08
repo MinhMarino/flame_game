@@ -400,6 +400,24 @@ class AntSmasherGame extends FlameGame
 
   void _spawnBossBee() => _spawnBee(isBoss: true);
 
+  /// Endless-mode test spawns for tuning enemy behavior and death sprites.
+  bool get canSpawnTestEnemies =>
+      !isLevelMode && !_gameOver && !isPaused && _canSpawnMore();
+
+  void spawnTestAnt() {
+    if (!canSpawnTestEnemies) {
+      return;
+    }
+    _spawnAnt();
+  }
+
+  void spawnTestBee({bool isBoss = false}) {
+    if (!canSpawnTestEnemies) {
+      return;
+    }
+    _spawnBee(isBoss: isBoss);
+  }
+
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
     if (enemy is AntEnemy) {
       return;
