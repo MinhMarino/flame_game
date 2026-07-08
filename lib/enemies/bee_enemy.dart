@@ -57,7 +57,9 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
   /// Vertical draw offset applied in [render]; used when spawning death sprite.
   double get bobOffset => _bobOffset;
 
-  AntSmasherGame get gameRef => findGame()! as AntSmasherGame;
+  AntSmasherGame? get optionalGameRef => findGame() as AntSmasherGame?;
+
+  AntSmasherGame get gameRef => optionalGameRef!;
 
   static double _initialHeading(Random random) {
     return pi / 2 + (random.nextDouble() - 0.5) * 0.9;
@@ -82,6 +84,11 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
       return;
     }
 
+    final game = optionalGameRef;
+    if (game == null || !game.hasLayout) {
+      return;
+    }
+
     _aliveTime += dt;
     _updateBurst(dt);
     _updateCourse(dt);
@@ -90,8 +97,8 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     _updateSpeed(dt);
     _moveForward(dt);
     _updateBob(dt);
-    _enforceBounds();
-    _checkEscaped();
+    _enforceBounds(game);
+    _checkEscaped(game);
     super.update(dt * _flapSpeed);
   }
 
@@ -156,8 +163,7 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     _bobOffset = sin(_aliveTime * 11 + _zigzagPhase) * bobAmount;
   }
 
-  void _enforceBounds() {
-    final game = gameRef;
+  void _enforceBounds(AntSmasherGame game) {
     final halfW = size.x * 0.5;
     final minX = halfW;
     final maxX = max(halfW, game.size.x - halfW);
@@ -171,15 +177,16 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     position.x = position.x.clamp(minX, maxX);
   }
 
-  void _checkEscaped() {
-    if (position.y > gameRef.size.y + size.y * 0.5) {
+  void _checkEscaped(AntSmasherGame game) {
+    if (position.y > game.size.y + size.y * 0.5) {
       BeeLifecycle.escape(this);
     }
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (!gameRef.acceptsGameplayInput) {
+    final game = optionalGameRef;
+    if (game == null || !game.acceptsGameplayInput) {
       return;
     }
     BeeLifecycle.defeat(this);

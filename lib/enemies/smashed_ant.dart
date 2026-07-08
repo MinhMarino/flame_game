@@ -14,8 +14,16 @@ class SmashedAnt extends SpriteComponent with HasGameReference<AntSmasherGame> {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    if (!isMounted) {
+      return;
+    }
 
-    sprite = Sprite(game.images.fromCache('ant_smashed.png'));
+    final image = await game.images.load('ant_smashed.png');
+    if (!isMounted) {
+      return;
+    }
+
+    sprite = Sprite(image);
 
     add(
       OpacityEffect.fadeOut(

@@ -7,9 +7,9 @@ class EnemyAssets {
 
   static const double antDisplayScale = 0.28;
 
-  /// Reduced to ~70% of the previous bee scale (0.45 -> 0.315).
-  static const double beeDisplayScale = 0.315;
-  static const double bossBeeDisplayScale = 0.42;
+  /// Reduced bee scale for clearer gameplay and easier tapping.
+  static const double beeDisplayScale = 0.24;
+  static const double bossBeeDisplayScale = 0.32;
 
   static const int beeFlyFrameCount = 8;
   static const double beeFlapStepTime = 0.055;

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Extract a bee death frame from a sprite sheet and build bee_smashed.png.
+"""Build bee_smashed.png from a source death image or sprite sheet.
 
 Steps:
-1. Crop the requested frame from a grid-based sprite sheet
+1. Load a single death image or crop one frame from a sprite sheet
 2. Remove the light background (transparent alpha)
 3. Auto-trim empty transparent borders
-4. Resize to the game's bee sprite size (313px, same base as ant_smashed)
+4. Scale and center to match ant_smashed proportions in a 313px canvas
 
 Usage:
   python3 scripts/extract_bee_smashed.py
+  python3 scripts/extract_bee_smashed.py --input assets/source/bee_death.png
   python3 scripts/extract_bee_smashed.py --frame 8 --input assets/source/bee_death_sheet.png
 """
 
@@ -21,7 +22,10 @@ from PIL import Image
 
 # Keep in sync with lib/enemies/enemy_assets.dart
 FRAME_SIZE = 313
-BEE_DISPLAY_SCALE = 0.315
+BEE_DISPLAY_SCALE = 0.24
+BEE_FLY_FRAME_COUNT = 8
+# Death art should read smaller than the live bee body on screen.
+DEATH_TO_LIVE_RATIO = 0.52
 DEFAULT_FRAME = 8
 DEFAULT_COLS = 4
 DEFAULT_ROWS = 4
@@ -33,8 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=root / "assets/source/bee_death_sheet.png",
-        help="Source sprite sheet path",
+        default=root / "assets/source/bee_death.png",
+        help="Source image path (single frame or sprite sheet)",
     )
     parser.add_argument(
         "--output",
@@ -43,10 +47,22 @@ def parse_args() -> argparse.Namespace:
         help="Output PNG path",
     )
     parser.add_argument(
+        "--reference-fly",
+        type=Path,
+        default=root / "assets/images/bee_fly_sheet.png",
+        help="Live bee fly sheet used for scale and center alignment",
+    )
+    parser.add_argument(
+        "--reference-ant",
+        type=Path,
+        default=root / "assets/images/ant_smashed.png",
+        help="Optional smashed ant used only for center fallback",
+    )
+    parser.add_argument(
         "--frame",
         type=int,
         default=DEFAULT_FRAME,
-        help="1-based frame index in the sheet grid",
+        help="1-based frame index when input is a sprite sheet grid",
     )
     parser.add_argument("--cols", type=int, default=DEFAULT_COLS)
     parser.add_argument("--rows", type=int, default=DEFAULT_ROWS)
@@ -63,22 +79,10 @@ def parse_args() -> argparse.Namespace:
         help="Background color distance threshold (higher = more aggressive)",
     )
     parser.add_argument(
-        "--fly-sheet",
-        type=Path,
-        default=root / "assets/images/bee_fly_sheet.png",
-        help="Live bee fly sheet used to align body center",
-    )
-    parser.add_argument(
-        "--fly-start-frame",
-        type=int,
-        default=0,
-        help="First fly frame index used for center alignment",
-    )
-    parser.add_argument(
-        "--fly-frame-count",
-        type=int,
-        default=8,
-        help="Number of fly frames averaged for center alignment",
+        "--death-scale",
+        type=float,
+        default=DEATH_TO_LIVE_RATIO,
+        help="Scale death art relative to live bee body size (lower = smaller)",
     )
     parser.add_argument(
         "--rotate",
@@ -119,6 +123,13 @@ def crop_frame(
     return image.crop((left, top, right, bottom))
 
 
+def is_sprite_sheet(image: Image.Image, cols: int, rows: int) -> bool:
+    width, height = image.size
+    cell_w = width // cols
+    cell_h = height // rows
+    return cell_w > 0 and cell_h > 0 and cols * cell_w == width and rows * cell_h == height
+
+
 def sample_background_color(image: Image.Image) -> tuple[int, int, int]:
     rgba = image.convert("RGBA")
     width, height = rgba.size
@@ -128,6 +139,7 @@ def sample_background_color(image: Image.Image) -> tuple[int, int, int]:
         (2, height - 3),
         (width - 3, height - 3),
         (width // 2, 2),
+        (width // 2, height - 3),
     ]
     rs: list[int] = []
     gs: list[int] = []
@@ -174,12 +186,45 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     return image.crop(bbox)
 
 
-def content_center(image: Image.Image) -> tuple[float, float] | None:
+def content_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
     alpha = image.getchannel("A")
-    bbox = alpha.getbbox()
+    return alpha.getbbox()
+
+
+def content_center(image: Image.Image) -> tuple[float, float] | None:
+    bbox = content_bbox(image)
     if bbox is None:
         return None
     return ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2)
+
+
+def content_max_dimension(image: Image.Image) -> int:
+    bbox = content_bbox(image)
+    if bbox is None:
+        return 0
+    return max(bbox[2] - bbox[0], bbox[3] - bbox[1])
+
+
+def rotate_art(image: Image.Image, degrees: int) -> Image.Image:
+    if degrees % 360 == 0:
+        return image
+    # PIL rotates counter-clockwise; negate for clockwise degrees.
+    return image.rotate(-degrees, expand=True, resample=Image.Resampling.BICUBIC)
+
+
+def scale_to_max_dimension(image: Image.Image, max_dim: int) -> Image.Image:
+    if max_dim <= 0:
+        return image
+    width, height = image.size
+    current_max = max(width, height)
+    if current_max == max_dim:
+        return image
+    scale = max_dim / current_max
+    new_size = (
+        max(1, int(round(width * scale))),
+        max(1, int(round(height * scale))),
+    )
+    return image.resize(new_size, Image.Resampling.LANCZOS)
 
 
 def average_content_center(frames: list[Image.Image]) -> tuple[float, float]:
@@ -191,52 +236,70 @@ def average_content_center(frames: list[Image.Image]) -> tuple[float, float]:
     return avg_x, avg_y
 
 
-def load_fly_reference_center(
+def average_content_max_dimension(frames: list[Image.Image]) -> float:
+    dims = [content_max_dimension(frame) for frame in frames]
+    dims = [dim for dim in dims if dim > 0]
+    if not dims:
+        raise ValueError("No opaque pixels found in reference frames")
+    return sum(dims) / len(dims)
+
+
+def load_fly_reference(
     fly_sheet_path: Path,
     frame_size: int,
-    start_frame: int,
     frame_count: int,
-) -> tuple[float, float]:
+) -> tuple[float, float, float]:
     sheet = Image.open(fly_sheet_path).convert("RGBA")
     frames: list[Image.Image] = []
-    for index in range(start_frame, start_frame + frame_count):
+    for index in range(frame_count):
         left = index * frame_size
         frames.append(sheet.crop((left, 0, left + frame_size, frame_size)))
-    return average_content_center(frames)
+    center = average_content_center(frames)
+    live_max = average_content_max_dimension(frames)
+    return center[0], center[1], live_max
 
 
-def rotate_art(image: Image.Image, degrees: int) -> Image.Image:
-    if degrees % 360 == 0:
-        return image
-    # PIL rotates counter-clockwise; negate for clockwise degrees.
-    return image.rotate(-degrees, expand=True, resample=Image.Resampling.BICUBIC)
+def reference_target_from_fly(
+    fly_reference_path: Path,
+    output_size: int,
+    frame_count: int,
+    death_scale: float,
+) -> tuple[float, float, int]:
+    target_x, target_y, live_max = load_fly_reference(
+        fly_reference_path,
+        output_size,
+        frame_count,
+    )
+    target_max = int(round(live_max * death_scale))
+    return target_x, target_y, target_max
 
 
-def resize_to_square(
+def place_on_canvas(
     image: Image.Image,
     size: int,
     *,
-    content_center_target: tuple[float, float] | None = None,
+    content_center_target: tuple[float, float],
 ) -> Image.Image:
     rgba = image.convert("RGBA")
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    rgba.thumbnail((size, size), Image.Resampling.LANCZOS)
-
-    if content_center_target is None:
+    source_center = content_center(rgba)
+    if source_center is None:
         offset = ((size - rgba.width) // 2, (size - rgba.height) // 2)
     else:
-        source_center = content_center(rgba)
-        if source_center is None:
-            offset = ((size - rgba.width) // 2, (size - rgba.height) // 2)
-        else:
-            target_x, target_y = content_center_target
-            offset = (
-                int(round(target_x - source_center[0])),
-                int(round(target_y - source_center[1])),
-            )
-
+        target_x, target_y = content_center_target
+        offset = (
+            int(round(target_x - source_center[0])),
+            int(round(target_y - source_center[1])),
+        )
     canvas.paste(rgba, offset, rgba)
     return canvas
+
+
+def load_source_frame(args: argparse.Namespace) -> Image.Image:
+    sheet = Image.open(args.input)
+    if is_sprite_sheet(sheet, args.cols, args.rows):
+        return crop_frame(sheet, args.frame, args.cols, args.rows)
+    return sheet
 
 
 def main() -> None:
@@ -244,39 +307,52 @@ def main() -> None:
 
     if not args.input.exists():
         raise SystemExit(f"Input not found: {args.input}")
+    if not args.reference_fly.exists():
+        raise SystemExit(f"Fly reference not found: {args.reference_fly}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
-    sheet = Image.open(args.input)
-    cropped = crop_frame(sheet, args.frame, args.cols, args.rows)
-    cutout = remove_background(cropped, args.bg_threshold)
+    source = load_source_frame(args)
+    cutout = remove_background(source, args.bg_threshold)
     trimmed = trim_transparent(cutout)
     rotated = rotate_art(trimmed, args.rotate)
-    reference_center = load_fly_reference_center(
-        args.fly_sheet,
+
+    target_x, target_y, target_max = reference_target_from_fly(
+        args.reference_fly,
         args.output_size,
-        args.fly_start_frame,
-        args.fly_frame_count,
+        BEE_FLY_FRAME_COUNT,
+        args.death_scale,
     )
-    final = resize_to_square(
-        rotated,
+    scaled = scale_to_max_dimension(rotated, target_max)
+    final = place_on_canvas(
+        scaled,
         args.output_size,
-        content_center_target=reference_center,
+        content_center_target=(target_x, target_y),
     )
     final.save(args.output)
 
     display_size = FRAME_SIZE * BEE_DISPLAY_SCALE
     print(f"Input:        {args.input}")
-    print(f"Frame:        {args.frame} ({args.cols}x{args.rows} grid)")
+    if is_sprite_sheet(source, args.cols, args.rows):
+        print(f"Frame:        {args.frame} ({args.cols}x{args.rows} grid)")
+    else:
+        print("Mode:         single image")
     print(f"Rotate:       {args.rotate}°")
-    print(f"Cropped:      {cropped.size}")
     print(f"Trimmed:      {trimmed.size}")
-    print(f"Fly center:   ({reference_center[0]:.1f}, {reference_center[1]:.1f})")
+    print(f"Live bee max: {reference_target_from_fly(args.reference_fly, args.output_size, BEE_FLY_FRAME_COUNT, 1.0)[2]:.0f}px avg")
+    print(
+        f"Target max:   {target_max}px "
+        f"({args.death_scale:.0%} of live bee body)"
+    )
+    print(f"Scaled:       {scaled.size}")
+    print(f"Center:       ({target_x:.1f}, {target_y:.1f})")
     smashed_center = content_center(final)
+    smashed_max = content_max_dimension(final)
     if smashed_center is not None:
         print(
             f"Smashed ctr:  ({smashed_center[0]:.1f}, {smashed_center[1]:.1f})"
         )
+    print(f"Smashed max:  {smashed_max}px")
     print(f"Output:       {args.output} ({final.size[0]}x{final.size[1]})")
     print(f"Runtime size: ~{display_size:.1f}px (bee display scale {BEE_DISPLAY_SCALE})")
 

@@ -1,22 +1,29 @@
+import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 
 import '../game/ant_smasher_game.dart';
 
 class SmashedBee extends SpriteComponent with HasGameReference<AntSmasherGame> {
-  SmashedBee({
-    required super.position,
-    required super.size,
-    required super.angle,
-  }) : super(anchor: Anchor.center, priority: 5);
+  SmashedBee({required super.position, required super.size})
+    : super(anchor: Anchor.center, angle: pi, priority: 5);
 
   static const double _fadeDuration = 0.9;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    if (!isMounted) {
+      return;
+    }
 
-    sprite = Sprite(game.images.fromCache('bee_smashed.png'));
+    final image = await game.images.load('bee_smashed.png');
+    if (!isMounted) {
+      return;
+    }
+
+    sprite = Sprite(image);
 
     add(
       OpacityEffect.fadeOut(

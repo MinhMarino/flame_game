@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 
 import '../enemies/ant_enemy.dart';
 import '../enemies/bee_enemy.dart';
+import '../enemies/smashed_ant.dart';
+import '../enemies/smashed_bee.dart';
 import '../enemies/enemy_assets.dart';
 import '../enemies/enemy_factory.dart';
 import '../enemies/spawned_enemy.dart';
@@ -24,6 +26,8 @@ import 'mixins/pausable_game_mixin.dart';
 typedef LevelCompleteCallback = void Function(LevelSession session);
 typedef LevelFailedCallback = void Function(LevelSession session);
 
+enum EndlessEnemyFilter { mixed, ant, bee, boss }
+
 class AntSmasherGame extends FlameGame
     with TapCallbacks, PausableGameMixin, ChangeNotifier {
   AntSmasherGame({
@@ -38,6 +42,7 @@ class AntSmasherGame extends FlameGame
   final LevelFailedCallback? onLevelFailed;
 
   static const int endlessMaxLives = 10;
+  static const bool endlessImmortal = true;
 
   final Random _random;
   late final EnemyFactory _enemyFactory;
@@ -58,8 +63,10 @@ class AntSmasherGame extends FlameGame
   double _gameTime = 0;
   bool _gameOver = false;
   bool _levelEnded = false;
+  EndlessEnemyFilter _endlessEnemyFilter = EndlessEnemyFilter.mixed;
 
   bool get isLevelMode => level != null;
+  EndlessEnemyFilter get endlessEnemyFilter => _endlessEnemyFilter;
   bool get isKitchenWorld => level?.worldId == 1;
   KitchenGameplayController? get kitchenController => _kitchenController;
   LevelSession? get levelSession => _levelSession;
@@ -151,7 +158,7 @@ class AntSmasherGame extends FlameGame
           ? '60s'
           : 'Score: 0',
       anchor: Anchor.topCenter,
-      position: Vector2(size.x / 2, 20),
+      position: Vector2.zero(),
       priority: 10,
       textRenderer: TextPaint(
         style: TextStyle(
@@ -167,7 +174,7 @@ class AntSmasherGame extends FlameGame
     _hintText = TextComponent(
       text: _initialHintText(),
       anchor: Anchor.topCenter,
-      position: Vector2(size.x / 2, 52),
+      position: Vector2.zero(),
       priority: 10,
       textRenderer: TextPaint(
         style: TextStyle(
@@ -177,9 +184,13 @@ class AntSmasherGame extends FlameGame
       ),
     );
 
-    _gameOverText = GameOverLabel(position: size / 2);
+    _gameOverText = GameOverLabel(position: Vector2.zero());
 
     addAll([_heartsHud, _scoreText, _hintText, _gameOverText]);
+
+    if (hasLayout) {
+      _layoutHud(size);
+    }
   }
 
   String _initialHintText() {
@@ -236,10 +247,14 @@ class AntSmasherGame extends FlameGame
     if (!isLoaded) {
       return;
     }
+    _layoutHud(size);
+    _kitchenController?.onGameResize();
+  }
+
+  void _layoutHud(Vector2 size) {
     _scoreText.position = Vector2(size.x / 2, 20);
     _hintText.position = Vector2(size.x / 2, 52);
     _gameOverText.position = size / 2;
-    _kitchenController?.onGameResize();
   }
 
   @override
@@ -262,7 +277,7 @@ class AntSmasherGame extends FlameGame
   void update(double dt) {
     super.update(dt);
 
-    if (_gameOver || _levelEnded) {
+    if (!isLoaded || _gameOver || _levelEnded) {
       return;
     }
 
@@ -327,7 +342,7 @@ class AntSmasherGame extends FlameGame
   }
 
   bool _canSpawnMore() {
-    if (size.x <= 0 || size.y <= 0) {
+    if (!isLoaded || !hasLayout || size.x <= 0 || size.y <= 0) {
       return false;
     }
 
@@ -345,11 +360,21 @@ class AntSmasherGame extends FlameGame
       return;
     }
 
-    final spawnBee = _random.nextDouble() < min(0.22, 0.08 + _gameTime * 0.004);
-    if (spawnBee) {
-      _spawnBee(isBoss: false);
-    } else {
-      _spawnAnt();
+    switch (_endlessEnemyFilter) {
+      case EndlessEnemyFilter.ant:
+        _spawnAnt();
+      case EndlessEnemyFilter.bee:
+        _spawnBee(isBoss: false);
+      case EndlessEnemyFilter.boss:
+        _spawnBossBee();
+      case EndlessEnemyFilter.mixed:
+        final spawnBee =
+            _random.nextDouble() < min(0.22, 0.08 + _gameTime * 0.004);
+        if (spawnBee) {
+          _spawnBee(isBoss: false);
+        } else {
+          _spawnAnt();
+        }
     }
   }
 
@@ -400,22 +425,16 @@ class AntSmasherGame extends FlameGame
 
   void _spawnBossBee() => _spawnBee(isBoss: true);
 
-  /// Endless-mode test spawns for tuning enemy behavior and death sprites.
-  bool get canSpawnTestEnemies =>
-      !isLevelMode && !_gameOver && !isPaused && _canSpawnMore();
+  /// Endless-mode enemy filter controls for tuning spawn behavior.
+  bool get canSelectEndlessEnemyFilter =>
+      isLoaded && !isLevelMode && !_gameOver;
 
-  void spawnTestAnt() {
-    if (!canSpawnTestEnemies) {
+  void setEndlessEnemyFilter(EndlessEnemyFilter filter) {
+    if (!canSelectEndlessEnemyFilter || _endlessEnemyFilter == filter) {
       return;
     }
-    _spawnAnt();
-  }
-
-  void spawnTestBee({bool isBoss = false}) {
-    if (!canSpawnTestEnemies) {
-      return;
-    }
-    _spawnBee(isBoss: isBoss);
+    _endlessEnemyFilter = filter;
+    notifyListeners();
   }
 
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
@@ -463,6 +482,10 @@ class AntSmasherGame extends FlameGame
 
   void onCrawlerEscaped(PositionComponent crawler) {
     if (_gameOver || _levelEnded) {
+      return;
+    }
+
+    if (!isLevelMode && endlessImmortal) {
       return;
     }
 
@@ -559,9 +582,24 @@ class AntSmasherGame extends FlameGame
 
   void _clearEnemies() {
     for (final enemy
-        in children.where((c) => c is SpawnedEnemy || c is BeeEnemy).toList()) {
+        in children
+            .where(
+              (c) =>
+                  c is SpawnedEnemy ||
+                  c is BeeEnemy ||
+                  c is AntEnemy ||
+                  c is SmashedBee ||
+                  c is SmashedAnt,
+            )
+            .toList()) {
       enemy.removeFromParent();
     }
+  }
+
+  @override
+  void dispose() {
+    pauseEngine();
+    super.dispose();
   }
 
   void restartGame() {
@@ -572,6 +610,7 @@ class AntSmasherGame extends FlameGame
     _spawnInterval = isLevelMode ? level!.spawnInterval : 1.6;
     _gameOver = false;
     _levelEnded = false;
+    _endlessEnemyFilter = EndlessEnemyFilter.mixed;
 
     if (level != null) {
       _levelSession = LevelSession(level!)..start();

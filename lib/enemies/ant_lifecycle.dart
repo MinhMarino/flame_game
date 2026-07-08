@@ -6,7 +6,11 @@ abstract final class AntLifecycle {
   AntLifecycle._();
 
   static void defeat(AntEnemy ant) {
-    final game = ant.gameRef;
+    final game = ant.optionalGameRef;
+    if (game == null) {
+      ant.removeFromParent();
+      return;
+    }
     if (game.isGameOver || game.isLevelEnded) {
       return;
     }
@@ -22,7 +26,11 @@ abstract final class AntLifecycle {
   }
 
   static void escape(AntEnemy ant) {
-    final game = ant.gameRef;
+    final game = ant.optionalGameRef;
+    if (game == null) {
+      ant.removeFromParent();
+      return;
+    }
     if (game.isGameOver || game.isLevelEnded) {
       ant.removeFromParent();
       return;

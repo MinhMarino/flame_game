@@ -8,7 +8,11 @@ abstract final class BeeLifecycle {
   BeeLifecycle._();
 
   static void defeat(BeeEnemy bee) {
-    final game = bee.gameRef;
+    final game = bee.optionalGameRef;
+    if (game == null) {
+      bee.removeFromParent();
+      return;
+    }
     if (game.isGameOver || game.isLevelEnded) {
       return;
     }
@@ -25,7 +29,11 @@ abstract final class BeeLifecycle {
   }
 
   static void escape(BeeEnemy bee) {
-    final game = bee.gameRef;
+    final game = bee.optionalGameRef;
+    if (game == null) {
+      bee.removeFromParent();
+      return;
+    }
     if (game.isGameOver || game.isLevelEnded) {
       bee.removeFromParent();
       return;

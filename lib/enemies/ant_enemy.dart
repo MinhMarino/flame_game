@@ -69,7 +69,9 @@ class AntEnemy extends SpriteAnimationComponent
 
   int get points => stats.scoreValue;
 
-  AntSmasherGame get gameRef => findGame()! as AntSmasherGame;
+  AntSmasherGame? get optionalGameRef => findGame() as AntSmasherGame?;
+
+  AntSmasherGame get gameRef => optionalGameRef!;
 
   double get _moveSpeed => speed * speedScale;
 
@@ -92,21 +94,30 @@ class AntEnemy extends SpriteAnimationComponent
   void update(double dt) {
     super.update(dt);
 
+    if (!isMounted) {
+      return;
+    }
+
+    final game = optionalGameRef;
+    if (game == null || !game.hasLayout) {
+      return;
+    }
+
     _aliveTime += dt;
-    _updateSteering(dt);
+    _updateSteering(dt, game);
     _rotateTowardTarget(dt);
     _moveForward(dt);
-    _enforceBounds();
-    _checkEscaped();
+    _enforceBounds(game);
+    _checkEscaped(game);
   }
 
-  void _updateSteering(double dt) {
+  void _updateSteering(double dt, AntSmasherGame game) {
     _wanderTimer -= dt;
     if (_wanderTimer <= 0) {
       _pickNextWanderTarget();
     }
 
-    final steering = _computeSteeringVector();
+    final steering = _computeSteeringVector(game);
     var desiredHeading = atan2(steering.y, steering.x);
 
     final zigzag = sin(_aliveTime * (2.4 + weaveIntensity * 1.8) + _zigzagPhase);
@@ -115,8 +126,7 @@ class AntEnemy extends SpriteAnimationComponent
     _targetHeading = _smoothHeading(desiredHeading, dt);
   }
 
-  Vector2 _computeSteeringVector() {
-    final game = gameRef;
+  Vector2 _computeSteeringVector(AntSmasherGame game) {
     final downBias = 0.75 + weaveIntensity * 0.1;
     var steerX = 0.0;
     var steerY = downBias;
@@ -170,16 +180,15 @@ class AntEnemy extends SpriteAnimationComponent
     position += direction * (_moveSpeed * dt);
   }
 
-  void _enforceBounds() {
-    final game = gameRef;
+  void _enforceBounds(AntSmasherGame game) {
     final halfW = size.x * 0.5;
     final minX = halfW;
     final maxX = max(halfW, game.size.x - halfW);
     position.x = position.x.clamp(minX, maxX);
   }
 
-  void _checkEscaped() {
-    if (position.y > gameRef.size.y + size.y * 0.5) {
+  void _checkEscaped(AntSmasherGame game) {
+    if (position.y > game.size.y + size.y * 0.5) {
       AntLifecycle.escape(this);
     }
   }
@@ -198,7 +207,8 @@ class AntEnemy extends SpriteAnimationComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (!gameRef.acceptsGameplayInput) {
+    final game = optionalGameRef;
+    if (game == null || !game.acceptsGameplayInput) {
       return;
     }
     takeDamage(1);

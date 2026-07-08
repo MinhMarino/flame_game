@@ -59,6 +59,7 @@ class _GameplayScreenState extends State<GameplayScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _game.pauseEngine();
     _game.dispose();
     AudioManager.instance.stopMusic();
     super.dispose();
@@ -192,7 +193,6 @@ class _GameplayScreenState extends State<GameplayScreen>
             Positioned(
               top: topPadding + 8,
               left: 12,
-              right: 68,
               child: EndlessSpawnTestBar(game: _game),
             ),
         ],
