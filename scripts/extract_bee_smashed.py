@@ -80,6 +80,12 @@ def parse_args() -> argparse.Namespace:
         default=8,
         help="Number of fly frames averaged for center alignment",
     )
+    parser.add_argument(
+        "--rotate",
+        type=int,
+        default=180,
+        help="Rotate extracted art clockwise by this many degrees (0 to skip)",
+    )
     return parser.parse_args()
 
 
@@ -199,6 +205,13 @@ def load_fly_reference_center(
     return average_content_center(frames)
 
 
+def rotate_art(image: Image.Image, degrees: int) -> Image.Image:
+    if degrees % 360 == 0:
+        return image
+    # PIL rotates counter-clockwise; negate for clockwise degrees.
+    return image.rotate(-degrees, expand=True, resample=Image.Resampling.BICUBIC)
+
+
 def resize_to_square(
     image: Image.Image,
     size: int,
@@ -238,6 +251,7 @@ def main() -> None:
     cropped = crop_frame(sheet, args.frame, args.cols, args.rows)
     cutout = remove_background(cropped, args.bg_threshold)
     trimmed = trim_transparent(cutout)
+    rotated = rotate_art(trimmed, args.rotate)
     reference_center = load_fly_reference_center(
         args.fly_sheet,
         args.output_size,
@@ -245,7 +259,7 @@ def main() -> None:
         args.fly_frame_count,
     )
     final = resize_to_square(
-        trimmed,
+        rotated,
         args.output_size,
         content_center_target=reference_center,
     )
@@ -254,6 +268,7 @@ def main() -> None:
     display_size = FRAME_SIZE * BEE_DISPLAY_SCALE
     print(f"Input:        {args.input}")
     print(f"Frame:        {args.frame} ({args.cols}x{args.rows} grid)")
+    print(f"Rotate:       {args.rotate}°")
     print(f"Cropped:      {cropped.size}")
     print(f"Trimmed:      {trimmed.size}")
     print(f"Fly center:   ({reference_center[0]:.1f}, {reference_center[1]:.1f})")
