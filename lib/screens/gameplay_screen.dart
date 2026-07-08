@@ -190,9 +190,9 @@ class _GameplayScreenState extends State<GameplayScreen>
             ),
           if (!widget.isLevelMode)
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
+              top: topPadding + 8,
+              left: 12,
+              right: 68,
               child: EndlessSpawnTestBar(game: _game),
             ),
         ],

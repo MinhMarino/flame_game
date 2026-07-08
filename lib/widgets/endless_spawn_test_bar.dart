@@ -9,37 +9,31 @@ class EndlessSpawnTestBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.paddingOf(context).bottom;
-
     return ListenableBuilder(
       listenable: game,
       builder: (context, _) {
         final enabled = game.canSpawnTestEnemies;
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottomPadding + 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _SpawnTestButton(
-                label: 'Ant',
-                enabled: enabled,
-                onPressed: game.spawnTestAnt,
-              ),
-              const SizedBox(width: 8),
-              _SpawnTestButton(
-                label: 'Bee',
-                enabled: enabled,
-                onPressed: () => game.spawnTestBee(),
-              ),
-              const SizedBox(width: 8),
-              _SpawnTestButton(
-                label: 'Boss',
-                enabled: enabled,
-                onPressed: () => game.spawnTestBee(isBoss: true),
-              ),
-            ],
-          ),
+        return Row(
+          children: [
+            _SpawnTestButton(
+              label: 'Ant',
+              enabled: enabled,
+              onPressed: game.spawnTestAnt,
+            ),
+            const SizedBox(width: 8),
+            _SpawnTestButton(
+              label: 'Bee',
+              enabled: enabled,
+              onPressed: () => game.spawnTestBee(),
+            ),
+            const SizedBox(width: 8),
+            _SpawnTestButton(
+              label: 'Boss',
+              enabled: enabled,
+              onPressed: () => game.spawnTestBee(isBoss: true),
+            ),
+          ],
         );
       },
     );
