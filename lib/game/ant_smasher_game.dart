@@ -345,9 +345,9 @@ class AntSmasherGame extends FlameGame
     final antSize = EnemyAssets.antDisplaySize();
 
     add(
-      _enemyFactory.createEndlessAnt(
+      _enemyFactory.createAnt(
         speed: speed,
-        position: Vector2(
+        startPosition: Vector2(
           _random.nextDouble() * size.x,
           -antSize * 0.5,
         ),
@@ -371,6 +371,10 @@ class AntSmasherGame extends FlameGame
   void _spawnBossBee() => _spawnBee(isBoss: true);
 
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
+    if (enemy is AntEnemy) {
+      return;
+    }
+
     _kitchenController?.onEnemyDefeated(enemy, skipScore: skipScore);
     add(
       FloatingText(
@@ -382,7 +386,21 @@ class AntSmasherGame extends FlameGame
   }
 
   void onSpawnedEnemyEscaped(SpawnedEnemy enemy) {
+    if (enemy is AntEnemy) {
+      return;
+    }
+
     _kitchenController?.onEnemyEscaped(enemy);
+  }
+
+  /// Unified ant hit handling used by every game mode.
+  void registerAntHit(AntEnemy ant) {
+    registerHit(ant);
+  }
+
+  /// Unified ant escape handling used by every game mode.
+  void onAntEscaped(AntEnemy ant) {
+    onCrawlerEscaped(ant);
   }
 
   void onCrawlerEscaped(PositionComponent crawler) {
@@ -409,7 +427,7 @@ class AntSmasherGame extends FlameGame
     }
 
     final points = switch (crawler) {
-      AntEnemy _ => 1,
+      AntEnemy ant => ant.points,
       BeeEnemy bee => bee.isBoss ? 5 : 3,
       _ => 0,
     };

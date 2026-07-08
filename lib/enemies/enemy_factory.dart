@@ -29,36 +29,23 @@ class EnemyFactory {
   final SpriteAnimation antWalkAnimation;
   final SpriteAnimation beeFlyAnimation;
 
-  AntEnemy createEndlessAnt({
+  /// Shared ant spawn used by Endless mode and Level mode.
+  AntEnemy createAnt({
     required double speed,
-    required Vector2 position,
-  }) {
-    return AntEnemy(
-      animation: antWalkAnimation.clone(),
-      displaySize: Vector2.all(EnemyAssets.antDisplaySize()),
-      stats: AntEnemy.endlessStats,
-      speed: speed,
-      random: random,
-      useLevelCallbacks: false,
-      startPosition: position,
-    );
-  }
-
-  AntEnemy createLevelAnt({
-    required EnemyStats stats,
     required Vector2 startPosition,
-    required double weaveIntensity,
+    double weaveIntensity = 0,
     double speedScale = 1,
   }) {
+    final stats = EnemyData.forKind(EnemyKind.blackAnt);
+
     return AntEnemy(
       animation: antWalkAnimation.clone(),
       displaySize: Vector2.all(stats.boxWidth),
       stats: stats,
-      speed: stats.speed,
+      speed: speed,
       random: random,
       weaveIntensity: weaveIntensity,
       speedScale: speedScale,
-      useLevelCallbacks: true,
       startPosition: startPosition,
     );
   }
@@ -103,8 +90,8 @@ class EnemyFactory {
     final startPosition = spawnPositionFor(stats);
 
     return switch (kind) {
-      EnemyKind.blackAnt => createLevelAnt(
-        stats: stats,
+      EnemyKind.blackAnt => createAnt(
+        speed: stats.speed,
         startPosition: startPosition,
         weaveIntensity: antWeaveIntensity,
         speedScale: speedScale,
