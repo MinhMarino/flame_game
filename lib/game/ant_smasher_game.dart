@@ -43,6 +43,7 @@ class AntSmasherGame extends FlameGame
   late final EnemyFactory _enemyFactory;
   late final SpriteAnimation _antWalkAnimation;
   late final SpriteAnimation _beeFlyAnimation;
+  late final SpriteAnimation _beeDeathAnimation;
   late final TextComponent _scoreText;
   late final TextComponent _hintText;
   late final GameOverLabel _gameOverText;
@@ -69,6 +70,8 @@ class AntSmasherGame extends FlameGame
   bool get isLevelEnded => _levelEnded;
 
   EnemyFactory get enemyFactory => _enemyFactory;
+
+  SpriteAnimation get beeDeathAnimation => _beeDeathAnimation;
 
   Iterable<SpawnedEnemy> get spawnedEnemies =>
       children.whereType<SpawnedEnemy>();
@@ -118,7 +121,8 @@ class AntSmasherGame extends FlameGame
     ]);
 
     _antWalkAnimation = _loadWalkAnimation('ant_walk_sheet.png');
-    _beeFlyAnimation = _loadWalkAnimation('bee_fly_sheet.png');
+    _beeFlyAnimation = _loadBeeFlyAnimation();
+    _beeDeathAnimation = _loadBeeDeathAnimation();
 
     _enemyFactory = EnemyFactory(
       game: this,
@@ -196,6 +200,45 @@ class AntSmasherGame extends FlameGame
         amount: EnemyAssets.frameCount,
         stepTime: 0.07,
         textureSize: Vector2(EnemyAssets.frameSize, EnemyAssets.frameSize),
+      ),
+    );
+  }
+
+  SpriteAnimation _loadBeeFlyAnimation() {
+    return _loadSheetAnimation(
+      'bee_fly_sheet.png',
+      frameCount: EnemyAssets.beeFlyFrameCount,
+      startFrame: 0,
+      stepTime: EnemyAssets.beeFlapStepTime,
+    );
+  }
+
+  SpriteAnimation _loadBeeDeathAnimation() {
+    return _loadSheetAnimation(
+      'bee_fly_sheet.png',
+      frameCount: EnemyAssets.beeDeathFrameCount,
+      startFrame: EnemyAssets.beeDeathFrameStart,
+      stepTime: 0.09,
+      loop: false,
+    );
+  }
+
+  SpriteAnimation _loadSheetAnimation(
+    String asset, {
+    required int frameCount,
+    required int startFrame,
+    required double stepTime,
+    bool loop = true,
+  }) {
+    final sheet = images.fromCache(asset);
+    return SpriteAnimation.fromFrameData(
+      sheet,
+      SpriteAnimationData.sequenced(
+        amount: frameCount,
+        stepTime: stepTime,
+        textureSize: Vector2(EnemyAssets.frameSize, EnemyAssets.frameSize),
+        texturePosition: Vector2(EnemyAssets.frameSize * startFrame, 0),
+        loop: loop,
       ),
     );
   }
@@ -362,7 +405,7 @@ class AntSmasherGame extends FlameGame
     add(
       _enemyFactory.createBee(
         isBoss: isBoss,
-        startPosition: Vector2(startX, 0),
+        startPosition: Vector2(startX, -size.y * 0.5),
         speedMultiplier: speedMultiplier,
       ),
     );
@@ -391,6 +434,16 @@ class AntSmasherGame extends FlameGame
     }
 
     _kitchenController?.onEnemyEscaped(enemy);
+  }
+
+  /// Unified bee hit handling used by every game mode.
+  void registerBeeHit(BeeEnemy bee) {
+    registerHit(bee);
+  }
+
+  /// Unified bee escape handling used by every game mode.
+  void onBeeEscaped(BeeEnemy bee) {
+    onCrawlerEscaped(bee);
   }
 
   /// Unified ant hit handling used by every game mode.
@@ -428,7 +481,7 @@ class AntSmasherGame extends FlameGame
 
     final points = switch (crawler) {
       AntEnemy ant => ant.points,
-      BeeEnemy bee => bee.isBoss ? 5 : 3,
+      BeeEnemy bee => bee.points,
       _ => 0,
     };
 

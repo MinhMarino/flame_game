@@ -7,7 +7,6 @@ import '../game/ant_smasher_game.dart';
 import 'ant_enemy.dart';
 import 'bee_enemy.dart';
 import 'data/enemy_data.dart';
-import 'enemy_assets.dart';
 import 'giant_spider_enemy.dart';
 import 'level_enemy.dart';
 import 'level_enemy_variants.dart';
@@ -55,19 +54,12 @@ class EnemyFactory {
     required Vector2 startPosition,
     double speedMultiplier = 1,
   }) {
-    final beeScale = isBoss
-        ? EnemyAssets.bossBeeDisplayScale
-        : EnemyAssets.beeDisplayScale;
-
     return BeeEnemy(
       animation: beeFlyAnimation.clone(),
-      orbitCenter: Vector2(startPosition.x, -40),
-      orbitRadius: (isBoss ? 40 : 28) + random.nextDouble() * 24,
-      angularSpeed: (2.2 + random.nextDouble() * 1.4) * speedMultiplier,
-      driftSpeed: (28 + random.nextDouble() * 18) * speedMultiplier,
-      displaySize: Vector2.all(EnemyAssets.frameSize * beeScale),
-      initialOrbitAngle: random.nextDouble() * pi * 2,
+      random: random,
+      startPosition: startPosition,
       isBoss: isBoss,
+      speedMultiplier: speedMultiplier,
     );
   }
 
