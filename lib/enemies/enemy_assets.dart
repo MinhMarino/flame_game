@@ -12,8 +12,6 @@ class EnemyAssets {
   static const double bossBeeDisplayScale = 0.42;
 
   static const int beeFlyFrameCount = 8;
-  static const int beeDeathFrameStart = 8;
-  static const int beeDeathFrameCount = 8;
   static const double beeFlapStepTime = 0.055;
 
   static double antDisplaySize() => frameSize * antDisplayScale;

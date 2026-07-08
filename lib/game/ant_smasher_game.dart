@@ -43,7 +43,6 @@ class AntSmasherGame extends FlameGame
   late final EnemyFactory _enemyFactory;
   late final SpriteAnimation _antWalkAnimation;
   late final SpriteAnimation _beeFlyAnimation;
-  late final SpriteAnimation _beeDeathAnimation;
   late final TextComponent _scoreText;
   late final TextComponent _hintText;
   late final GameOverLabel _gameOverText;
@@ -70,8 +69,6 @@ class AntSmasherGame extends FlameGame
   bool get isLevelEnded => _levelEnded;
 
   EnemyFactory get enemyFactory => _enemyFactory;
-
-  SpriteAnimation get beeDeathAnimation => _beeDeathAnimation;
 
   Iterable<SpawnedEnemy> get spawnedEnemies =>
       children.whereType<SpawnedEnemy>();
@@ -117,12 +114,12 @@ class AntSmasherGame extends FlameGame
     await images.loadAll([
       'ant_walk_sheet.png',
       'bee_fly_sheet.png',
+      'bee_smashed.png',
       'ant_smashed.png',
     ]);
 
     _antWalkAnimation = _loadWalkAnimation('ant_walk_sheet.png');
     _beeFlyAnimation = _loadBeeFlyAnimation();
-    _beeDeathAnimation = _loadBeeDeathAnimation();
 
     _enemyFactory = EnemyFactory(
       game: this,
@@ -210,16 +207,6 @@ class AntSmasherGame extends FlameGame
       frameCount: EnemyAssets.beeFlyFrameCount,
       startFrame: 0,
       stepTime: EnemyAssets.beeFlapStepTime,
-    );
-  }
-
-  SpriteAnimation _loadBeeDeathAnimation() {
-    return _loadSheetAnimation(
-      'bee_fly_sheet.png',
-      frameCount: EnemyAssets.beeDeathFrameCount,
-      startFrame: EnemyAssets.beeDeathFrameStart,
-      stepTime: 0.09,
-      loop: false,
     );
   }
 

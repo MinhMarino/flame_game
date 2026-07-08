@@ -1,5 +1,5 @@
 import 'bee_enemy.dart';
-import 'bee_death_effect.dart';
+import 'smashed_bee.dart';
 
 /// Single source of truth for bee defeat and escape handling.
 abstract final class BeeLifecycle {
@@ -12,12 +12,9 @@ abstract final class BeeLifecycle {
     }
 
     game.add(
-      BeeDeathEffect(
-        startPosition: bee.position.clone(),
-        bodySize: bee.size.clone(),
-        bodyAngle: bee.angle,
-        deathAnimation: game.beeDeathAnimation,
-        random: bee.random,
+      SmashedBee(
+        position: bee.position.clone(),
+        size: bee.size.clone(),
       ),
     );
     game.registerBeeHit(bee);
