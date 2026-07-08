@@ -4,8 +4,11 @@ import 'package:flame/effects.dart';
 import '../game/ant_smasher_game.dart';
 
 class SmashedBee extends SpriteComponent with HasGameReference<AntSmasherGame> {
-  SmashedBee({required super.position, required super.size})
-    : super(anchor: Anchor.center, priority: 5);
+  SmashedBee({
+    required super.position,
+    required super.size,
+    required super.angle,
+  }) : super(anchor: Anchor.center, priority: 5);
 
   static const double _fadeDuration = 0.9;
 

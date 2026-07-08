@@ -62,6 +62,24 @@ def parse_args() -> argparse.Namespace:
         default=28,
         help="Background color distance threshold (higher = more aggressive)",
     )
+    parser.add_argument(
+        "--fly-sheet",
+        type=Path,
+        default=root / "assets/images/bee_fly_sheet.png",
+        help="Live bee fly sheet used to align body center",
+    )
+    parser.add_argument(
+        "--fly-start-frame",
+        type=int,
+        default=0,
+        help="First fly frame index used for center alignment",
+    )
+    parser.add_argument(
+        "--fly-frame-count",
+        type=int,
+        default=8,
+        help="Number of fly frames averaged for center alignment",
+    )
     return parser.parse_args()
 
 
@@ -150,11 +168,60 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     return image.crop(bbox)
 
 
-def resize_to_square(image: Image.Image, size: int) -> Image.Image:
+def content_center(image: Image.Image) -> tuple[float, float] | None:
+    alpha = image.getchannel("A")
+    bbox = alpha.getbbox()
+    if bbox is None:
+        return None
+    return ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2)
+
+
+def average_content_center(frames: list[Image.Image]) -> tuple[float, float]:
+    centers = [c for frame in frames if (c := content_center(frame)) is not None]
+    if not centers:
+        raise ValueError("No opaque pixels found in reference frames")
+    avg_x = sum(x for x, _ in centers) / len(centers)
+    avg_y = sum(y for _, y in centers) / len(centers)
+    return avg_x, avg_y
+
+
+def load_fly_reference_center(
+    fly_sheet_path: Path,
+    frame_size: int,
+    start_frame: int,
+    frame_count: int,
+) -> tuple[float, float]:
+    sheet = Image.open(fly_sheet_path).convert("RGBA")
+    frames: list[Image.Image] = []
+    for index in range(start_frame, start_frame + frame_count):
+        left = index * frame_size
+        frames.append(sheet.crop((left, 0, left + frame_size, frame_size)))
+    return average_content_center(frames)
+
+
+def resize_to_square(
+    image: Image.Image,
+    size: int,
+    *,
+    content_center_target: tuple[float, float] | None = None,
+) -> Image.Image:
     rgba = image.convert("RGBA")
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     rgba.thumbnail((size, size), Image.Resampling.LANCZOS)
-    offset = ((size - rgba.width) // 2, (size - rgba.height) // 2)
+
+    if content_center_target is None:
+        offset = ((size - rgba.width) // 2, (size - rgba.height) // 2)
+    else:
+        source_center = content_center(rgba)
+        if source_center is None:
+            offset = ((size - rgba.width) // 2, (size - rgba.height) // 2)
+        else:
+            target_x, target_y = content_center_target
+            offset = (
+                int(round(target_x - source_center[0])),
+                int(round(target_y - source_center[1])),
+            )
+
     canvas.paste(rgba, offset, rgba)
     return canvas
 
@@ -171,7 +238,17 @@ def main() -> None:
     cropped = crop_frame(sheet, args.frame, args.cols, args.rows)
     cutout = remove_background(cropped, args.bg_threshold)
     trimmed = trim_transparent(cutout)
-    final = resize_to_square(trimmed, args.output_size)
+    reference_center = load_fly_reference_center(
+        args.fly_sheet,
+        args.output_size,
+        args.fly_start_frame,
+        args.fly_frame_count,
+    )
+    final = resize_to_square(
+        trimmed,
+        args.output_size,
+        content_center_target=reference_center,
+    )
     final.save(args.output)
 
     display_size = FRAME_SIZE * BEE_DISPLAY_SCALE
@@ -179,6 +256,12 @@ def main() -> None:
     print(f"Frame:        {args.frame} ({args.cols}x{args.rows} grid)")
     print(f"Cropped:      {cropped.size}")
     print(f"Trimmed:      {trimmed.size}")
+    print(f"Fly center:   ({reference_center[0]:.1f}, {reference_center[1]:.1f})")
+    smashed_center = content_center(final)
+    if smashed_center is not None:
+        print(
+            f"Smashed ctr:  ({smashed_center[0]:.1f}, {smashed_center[1]:.1f})"
+        )
     print(f"Output:       {args.output} ({final.size[0]}x{final.size[1]})")
     print(f"Runtime size: ~{display_size:.1f}px (bee display scale {BEE_DISPLAY_SCALE})")
 

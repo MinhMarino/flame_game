@@ -54,6 +54,9 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
 
   int get points => isBoss ? 5 : 3;
 
+  /// Vertical draw offset applied in [render]; used when spawning death sprite.
+  double get bobOffset => _bobOffset;
+
   AntSmasherGame get gameRef => findGame()! as AntSmasherGame;
 
   static double _initialHeading(Random random) {

@@ -1,3 +1,5 @@
+import 'package:flame/components.dart';
+
 import 'bee_enemy.dart';
 import 'smashed_bee.dart';
 
@@ -13,8 +15,9 @@ abstract final class BeeLifecycle {
 
     game.add(
       SmashedBee(
-        position: bee.position.clone(),
+        position: bee.position + Vector2(0, bee.bobOffset),
         size: bee.size.clone(),
+        angle: bee.angle,
       ),
     );
     game.registerBeeHit(bee);
