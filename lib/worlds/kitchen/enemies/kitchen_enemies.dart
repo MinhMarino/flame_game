@@ -16,6 +16,7 @@ class KitchenEnemy extends PositionComponent with TapCallbacks {
     required this.random,
     required Vector2 startPosition,
     this.speedScale = 1,
+    this.showLabel = true,
   }) : currentHp = stats.maxHp,
        super(
          size: Vector2(stats.boxWidth, stats.boxHeight),
@@ -26,6 +27,7 @@ class KitchenEnemy extends PositionComponent with TapCallbacks {
   final KitchenEnemyStats stats;
   final Random random;
   final double speedScale;
+  final bool showLabel;
   int currentHp;
 
   double _angryTimer = 0;
@@ -62,23 +64,25 @@ class KitchenEnemy extends PositionComponent with TapCallbacks {
         anchor: Anchor.center,
         position: size / 2,
       );
-      _nameLabel = TextComponent(
-        text: stage.label,
-        anchor: Anchor.center,
-        position: size / 2,
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: stats.damageStages != null ? 10 : 11,
-            fontWeight: FontWeight.bold,
+      if (showLabel) {
+        _nameLabel = TextComponent(
+          text: stage.label,
+          anchor: Anchor.center,
+          position: size / 2,
+          textRenderer: TextPaint(
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: stats.damageStages != null ? 10 : 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      );
-      _body!.add(_nameLabel!);
+        );
+        _body!.add(_nameLabel!);
+      }
       add(_body!);
     } else {
       _body!.paint.color = stage.tint;
-      _nameLabel!.text = stage.label;
+      _nameLabel?.text = stage.label;
     }
 
     if (stats.maxHp > 1 && _hpLabel == null) {
@@ -172,11 +176,19 @@ class BlackAntEnemy extends KitchenEnemy {
     required super.startPosition,
     required this.weaveIntensity,
     super.speedScale,
+    super.showLabel = false,
   }) : _centerX = startPosition.x,
        _weavePhase = random.nextDouble() * pi * 2,
-       _turnTimer = random.nextDouble() * 0.4;
+       _turnIntervalScale = 0.55 + random.nextDouble() * 0.9,
+       _frequencyScale = 0.75 + random.nextDouble() * 0.5 {
+    _turnTimer = random.nextDouble() * (0.2 + 0.35 * _turnIntervalScale);
+  }
+
+  static const _weaveScale = 0.5;
 
   final double weaveIntensity;
+  final double _turnIntervalScale;
+  final double _frequencyScale;
   double _centerX;
   final double _weavePhase;
   double _weaveTime = 0;
@@ -184,19 +196,28 @@ class BlackAntEnemy extends KitchenEnemy {
   double _laneDrift = 0;
   double _jitterX = 0;
 
+  double get _baseTurnInterval =>
+      max(0.18, 0.42 - weaveIntensity * 0.12) * _turnIntervalScale;
+
   @override
   void update(double dt) {
     _weaveTime += dt;
     _turnTimer -= dt;
 
     if (_turnTimer <= 0) {
-      _laneDrift = (random.nextDouble() * 2 - 1) * (110 + weaveIntensity * 90);
-      _jitterX = (random.nextDouble() * 2 - 1) * (18 + weaveIntensity * 22);
-      _turnTimer = max(0.18, 0.42 - weaveIntensity * 0.12);
+      _laneDrift =
+          (random.nextDouble() * 2 - 1) *
+          (110 + weaveIntensity * 90) *
+          _weaveScale;
+      _jitterX =
+          (random.nextDouble() * 2 - 1) *
+          (18 + weaveIntensity * 22) *
+          _weaveScale;
+      _turnTimer = _baseTurnInterval;
     }
 
-    final frequency = 2.8 + weaveIntensity * 4.2;
-    final amplitude = 34 + weaveIntensity * 58;
+    final frequency = (2.8 + weaveIntensity * 4.2) * _frequencyScale;
+    final amplitude = (34 + weaveIntensity * 58) * _weaveScale;
     final zigzag =
         sin(_weaveTime * frequency + _weavePhase) * amplitude * dt * 9;
     final wobble =

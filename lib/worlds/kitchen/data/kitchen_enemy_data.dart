@@ -17,9 +17,9 @@ class KitchenEnemyData {
       speed: baseAntSpeed,
       scoreValue: 1,
       displayScale: 0.28,
-      boxWidth: 72,
-      boxHeight: 40,
-      tint: Color(0xFF1F2937),
+      boxWidth: 24,
+      boxHeight: 60,
+      tint: Color(0xFF000000),
     ),
     KitchenEnemyKind.houseFly: KitchenEnemyStats(
       kind: KitchenEnemyKind.houseFly,
