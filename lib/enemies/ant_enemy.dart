@@ -10,7 +10,7 @@ import 'models/enemy_stats.dart';
 import 'smashed_ant.dart';
 import 'spawned_enemy.dart';
 
-/// Sprite ant used in endless mode and kitchen levels.
+/// Sprite ant with forward-only locomotion: turn first, then walk.
 class AntEnemy extends SpriteAnimationComponent
     with TapCallbacks
     implements SpawnedEnemy {
@@ -26,15 +26,19 @@ class AntEnemy extends SpriteAnimationComponent
     Vector2? startPosition,
   }) : _random = random,
        _currentHp = stats.maxHp,
-       _centerX = startPosition?.x ?? 0,
-       _weavePhase = random.nextDouble() * pi * 2,
-       _turnIntervalScale = 0.55 + random.nextDouble() * 0.9,
-       _frequencyScale = 0.75 + random.nextDouble() * 0.5,
+       _heading = _initialHeading(random),
+       _targetHeading = _initialHeading(random),
+       _wanderPhase = random.nextDouble() * pi * 2,
+       _zigzagPhase = random.nextDouble() * pi * 2,
+       _turnRate = _initialTurnRate(random, weaveIntensity),
+       _wanderRate = 0.7 + random.nextDouble() * 0.8,
        super(size: displaySize, anchor: Anchor.center, position: startPosition) {
-    _turnTimer = random.nextDouble() * (0.2 + 0.35 * _turnIntervalScale);
+    _pickNextWanderTarget();
+    angle = _heading + _spriteAngleOffset;
   }
 
-  static const _weaveScale = 0.5;
+  /// Sprite sheet faces upward at rotation 0; offset aligns art with heading.
+  static const _spriteAngleOffset = pi / 2;
 
   static final EnemyStats endlessStats = EnemyStats(
     kind: EnemyKind.blackAnt,
@@ -56,14 +60,14 @@ class AntEnemy extends SpriteAnimationComponent
   final bool useLevelCallbacks;
   final Random _random;
 
-  final double _turnIntervalScale;
-  final double _frequencyScale;
-  double _centerX;
-  final double _weavePhase;
-  double _weaveTime = 0;
-  double _turnTimer = 0;
-  double _laneDrift = 0;
-  double _jitterX = 0;
+  double _heading;
+  double _targetHeading;
+  final double _wanderPhase;
+  final double _zigzagPhase;
+  final double _turnRate;
+  final double _wanderRate;
+  double _wanderTimer = 0;
+  double _aliveTime = 0;
   int _currentHp;
 
   @override
@@ -85,54 +89,104 @@ class AntEnemy extends SpriteAnimationComponent
   double get _moveSpeed =>
       (useLevelCallbacks ? stats.speed : speed) * speedScale;
 
-  double get _baseTurnInterval =>
-      max(0.18, 0.42 - weaveIntensity * 0.12) * _turnIntervalScale;
+  double get _wanderStrength => 0.12 + weaveIntensity * 0.34;
+
+  double get _zigzagStrength => 0.04 + weaveIntensity * 0.11;
+
+  static double _initialHeading(Random random) {
+    return pi / 2 + (random.nextDouble() - 0.5) * 0.5;
+  }
+
+  static double _initialTurnRate(Random random, double weaveIntensity) {
+    final minRate = pi;
+    final maxRate = pi * 2;
+    final t = random.nextDouble();
+    return minRate + (maxRate - minRate) * t * (0.85 + weaveIntensity * 0.15);
+  }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    if (weaveIntensity > 0) {
-      _updateWeave(dt);
-    } else {
-      position.y += _moveSpeed * dt;
-    }
-
-    angle = pi;
+    _aliveTime += dt;
+    _updateSteering(dt);
+    _rotateTowardTarget(dt);
+    _moveForward(dt);
+    _enforceBounds();
     _checkEscaped();
   }
 
-  void _updateWeave(double dt) {
-    _weaveTime += dt;
-    _turnTimer -= dt;
-
-    if (_turnTimer <= 0) {
-      _laneDrift =
-          (_random.nextDouble() * 2 - 1) *
-          (110 + weaveIntensity * 90) *
-          _weaveScale;
-      _jitterX =
-          (_random.nextDouble() * 2 - 1) *
-          (18 + weaveIntensity * 22) *
-          _weaveScale;
-      _turnTimer = _baseTurnInterval;
+  void _updateSteering(double dt) {
+    _wanderTimer -= dt;
+    if (_wanderTimer <= 0) {
+      _pickNextWanderTarget();
     }
 
-    final frequency = (2.8 + weaveIntensity * 4.2) * _frequencyScale;
-    final amplitude = (34 + weaveIntensity * 58) * _weaveScale;
-    final zigzag =
-        sin(_weaveTime * frequency + _weavePhase) * amplitude * dt * 9;
-    final wobble =
-        sin(_weaveTime * frequency * 2.3 + _weavePhase + 1.2) *
-        amplitude *
-        0.28;
+    final steering = _computeSteeringVector();
+    var desiredHeading = atan2(steering.y, steering.x);
 
-    _centerX += _laneDrift * dt;
-    _centerX += zigzag;
-    _centerX = _centerX.clamp(size.x * 0.5, _game.size.x - size.x * 0.5);
+    final zigzag = sin(_aliveTime * (2.4 + weaveIntensity * 1.8) + _zigzagPhase);
+    desiredHeading += zigzag * _zigzagStrength;
 
-    position.x = _centerX + wobble + _jitterX * 0.15;
-    position.y += _moveSpeed * dt;
+    _targetHeading = _smoothHeading(desiredHeading, dt);
+  }
+
+  Vector2 _computeSteeringVector() {
+    final downBias = 0.75 + weaveIntensity * 0.1;
+    var steerX = 0.0;
+    var steerY = downBias;
+
+    final halfW = size.x * 0.5;
+    final margin = max(40.0, size.x * 1.6);
+    final left = halfW + margin;
+    final right = _game.size.x - halfW - margin;
+
+    if (position.x < left) {
+      final urgency = 1 - (position.x / left).clamp(0.0, 1.0);
+      steerX += urgency * (1.1 + weaveIntensity * 0.4);
+    } else if (position.x > right) {
+      final urgency = 1 - ((_game.size.x - position.x) / (_game.size.x - right)).clamp(0.0, 1.0);
+      steerX -= urgency * (1.1 + weaveIntensity * 0.4);
+    }
+
+    final wander = sin(_aliveTime * _wanderRate + _wanderPhase) * _wanderStrength;
+    steerX += wander;
+
+    final blended = Vector2(steerX, steerY);
+    if (blended.length2 < 0.0001) {
+      return Vector2(0, 1);
+    }
+    return blended..normalize();
+  }
+
+  void _pickNextWanderTarget() {
+    final jitter = ( _random.nextDouble() - 0.5) * _wanderStrength * 1.6;
+    _targetHeading = pi / 2 + jitter;
+    _wanderTimer = 0.35 + _random.nextDouble() * (0.9 - weaveIntensity * 0.2);
+  }
+
+  double _smoothHeading(double desiredHeading, double dt) {
+    final blend = (dt * (1.6 + weaveIntensity * 0.8)).clamp(0.0, 1.0);
+    final delta = _shortestAngleDelta(_targetHeading, desiredHeading);
+    return _normalizeAngle(_targetHeading + delta * blend);
+  }
+
+  void _rotateTowardTarget(double dt) {
+    final maxTurn = _turnRate * dt;
+    _heading = _rotateToward(_heading, _targetHeading, maxTurn);
+    angle = _heading + _spriteAngleOffset;
+  }
+
+  void _moveForward(double dt) {
+    final direction = Vector2(cos(_heading), sin(_heading));
+    position += direction * (_moveSpeed * dt);
+  }
+
+  void _enforceBounds() {
+    final halfW = size.x * 0.5;
+    final minX = halfW;
+    final maxX = max(halfW, _game.size.x - halfW);
+    position.x = position.x.clamp(minX, maxX);
   }
 
   void _checkEscaped() {
@@ -174,5 +228,28 @@ class AntEnemy extends SpriteAnimationComponent
       return;
     }
     takeDamage(1);
+  }
+
+  static double _normalizeAngle(double angle) {
+    var result = angle;
+    while (result > pi) {
+      result -= 2 * pi;
+    }
+    while (result < -pi) {
+      result += 2 * pi;
+    }
+    return result;
+  }
+
+  static double _shortestAngleDelta(double from, double to) {
+    return _normalizeAngle(to - from);
+  }
+
+  static double _rotateToward(double current, double target, double maxDelta) {
+    final delta = _shortestAngleDelta(current, target);
+    if (delta.abs() <= maxDelta) {
+      return target;
+    }
+    return current + delta.sign * maxDelta;
   }
 }
