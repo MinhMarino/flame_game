@@ -24,8 +24,8 @@ from PIL import Image
 FRAME_SIZE = 313
 BEE_DISPLAY_SCALE = 0.24
 BEE_FLY_FRAME_COUNT = 8
-# Death art should read smaller than the live bee body on screen.
-DEATH_TO_LIVE_RATIO = 0.52
+# Death art should read slightly smaller than the live bee body on screen.
+DEATH_TO_LIVE_RATIO = 0.92
 DEFAULT_FRAME = 8
 DEFAULT_COLS = 4
 DEFAULT_ROWS = 4
@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--rotate",
         type=int,
-        default=180,
+        default=0,
         help="Rotate extracted art clockwise by this many degrees (0 to skip)",
     )
     return parser.parse_args()
@@ -161,6 +161,14 @@ def color_distance(
     return abs(r - br) + abs(g - bg) + abs(b - bb)
 
 
+def is_checkerboard_background(pixel: tuple[int, int, int, int]) -> bool:
+    r, g, b, _ = pixel
+    max_c = max(r, g, b)
+    min_c = min(r, g, b)
+    # Neutral light gray / white cells used in exported checkerboards.
+    return max_c - min_c <= 18 and max_c >= 180
+
+
 def remove_background(
     image: Image.Image,
     threshold: int,
@@ -172,8 +180,12 @@ def remove_background(
 
     for y in range(height):
         for x in range(width):
-            if color_distance(pixels[x, y], background) <= threshold:
-                pixels[x, y] = (pixels[x, y][0], pixels[x, y][1], pixels[x, y][2], 0)
+            pixel = pixels[x, y]
+            if is_checkerboard_background(pixel) or color_distance(
+                pixel,
+                background,
+            ) <= threshold:
+                pixels[x, y] = (pixel[0], pixel[1], pixel[2], 0)
 
     return rgba
 

@@ -11,7 +11,7 @@ abstract final class AntLifecycle {
       ant.removeFromParent();
       return;
     }
-    if (game.isGameOver || game.isLevelEnded) {
+    if (!game.isLoaded || game.isGameOver || game.isLevelEnded) {
       return;
     }
 

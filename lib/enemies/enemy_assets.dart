@@ -14,8 +14,14 @@ class EnemyAssets {
   static const int beeFlyFrameCount = 8;
   static const double beeFlapStepTime = 0.055;
 
+  /// Smashed bee is drawn slightly smaller than the live bee silhouette.
+  static const double beeSmashedDisplayScaleFactor = 0.94;
+
   static double antDisplaySize() => frameSize * antDisplayScale;
 
   static double beeDisplaySize({required bool isBoss}) =>
       frameSize * (isBoss ? bossBeeDisplayScale : beeDisplayScale);
+
+  static double beeSmashedDisplaySize({required bool isBoss}) =>
+      beeDisplaySize(isBoss: isBoss) * beeSmashedDisplayScaleFactor;
 }

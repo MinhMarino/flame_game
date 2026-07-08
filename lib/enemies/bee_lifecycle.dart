@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 
 import 'bee_enemy.dart';
+import 'enemy_assets.dart';
 import 'smashed_bee.dart';
 
 /// Single source of truth for bee defeat and escape handling.
@@ -13,15 +14,16 @@ abstract final class BeeLifecycle {
       bee.removeFromParent();
       return;
     }
-    if (game.isGameOver || game.isLevelEnded) {
+    if (!game.isLoaded || game.isGameOver || game.isLevelEnded) {
       return;
     }
 
     game.add(
       SmashedBee(
-        position: bee.position + Vector2(0, bee.bobOffset),
-        size: bee.size.clone(),
-        angle: bee.angle,
+        position: bee.position.clone(),
+        size: Vector2.all(
+          EnemyAssets.beeSmashedDisplaySize(isBoss: bee.isBoss),
+        ),
       ),
     );
     game.registerBeeHit(bee);

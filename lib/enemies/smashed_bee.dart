@@ -12,18 +12,9 @@ class SmashedBee extends SpriteComponent with HasGameReference<AntSmasherGame> {
   static const double _fadeDuration = 0.9;
 
   @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-    if (!isMounted) {
-      return;
-    }
-
-    final image = await game.images.load('bee_smashed.png');
-    if (!isMounted) {
-      return;
-    }
-
-    sprite = Sprite(image);
+  void onLoad() {
+    super.onLoad();
+    sprite = Sprite(game.images.fromCache('bee_smashed.png'));
 
     add(
       OpacityEffect.fadeOut(
