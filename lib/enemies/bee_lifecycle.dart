@@ -17,7 +17,7 @@ abstract final class BeeLifecycle {
       SmashedBee(
         position: bee.position + Vector2(0, bee.bobOffset),
         size: bee.size.clone(),
-        liveAngle: bee.angle,
+        angle: bee.angle,
       ),
     );
     game.registerBeeHit(bee);

@@ -9,7 +9,7 @@ Steps:
 
 Usage:
   python3 scripts/extract_bee_smashed.py
-  python3 scripts/extract_bee_smashed.py --frame 7 --input assets/source/bee_death_sheet.png
+  python3 scripts/extract_bee_smashed.py --frame 8 --input assets/source/bee_death_sheet.png
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from PIL import Image
 # Keep in sync with lib/enemies/enemy_assets.dart
 FRAME_SIZE = 313
 BEE_DISPLAY_SCALE = 0.315
-DEFAULT_FRAME = 7
+DEFAULT_FRAME = 8
 DEFAULT_COLS = 4
 DEFAULT_ROWS = 4
 
