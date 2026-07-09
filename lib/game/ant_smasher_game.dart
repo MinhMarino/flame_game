@@ -44,6 +44,10 @@ class AntSmasherGame extends FlameGame
   static const int endlessMaxLives = 10;
   static const bool endlessImmortal = true;
 
+  /// Caps concurrent animated enemies in Endless mode so update/render cost
+  /// stays bounded, keeping enemy movement and animation smooth over time.
+  static const int endlessMaxSimultaneousEnemies = 18;
+
   final Random _random;
   late final EnemyFactory _enemyFactory;
   late final SpriteAnimation _antWalkAnimation;
@@ -351,7 +355,7 @@ class AntSmasherGame extends FlameGame
     if (isLevelMode) {
       return activeEnemies < level!.maxSimultaneousEnemies;
     }
-    return true;
+    return activeEnemies < endlessMaxSimultaneousEnemies;
   }
 
   void _spawnEnemy() {
