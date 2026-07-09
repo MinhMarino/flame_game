@@ -15,13 +15,14 @@ class FlySwatterCursor extends SpriteComponent
   FlySwatterCursor()
     : super(
         size: Vector2(135, 265),
-        anchor: const Anchor(0.64, 0.16),
+        anchor: const Anchor(0.36, 0.16),
         priority: 100,
       );
 
-  /// Horizontal flip factor. -1 mirrors the sprite so the handle rests on the
-  /// opposite side. Baked into the x scale every frame so it survives squash.
-  static const double _flipX = -1;
+  /// Horizontal flip factor. Set to -1 to mirror the sprite so the handle
+  /// rests on the opposite side. Baked into the x scale every frame so it
+  /// survives squash.
+  static const double _flipX = 1;
 
   /// Neutral display tilt of the sprite (radians).
   static const double _restAngle = -0.30;
