@@ -93,34 +93,36 @@ class FlySwatterCursor extends SpriteComponent
     double shakeX = 0;
 
     if (t < _windupEnd) {
-      // Wind-up: fade in while the head lifts back and up.
+      // Wind-up: fade in while the head arcs back and the handle swings up.
       final p = _easeOut(t / _windupEnd);
       offsetY = _lerp(-_raiseHeight * 0.45, -_raiseHeight, p);
-      angle = _lerp(_restAngle - 0.12, _restAngle - 0.44, p);
+      angle = _lerp(_restAngle - 0.18, _restAngle - 0.75, p);
       scaleX = 1;
       scaleY = 1;
       opacity = (t / _windupEnd * 1.6).clamp(0.0, 1.0);
     } else if (t < _slamEnd) {
-      // Slam: accelerate the head straight down onto the target.
+      // Slam: accelerate the head straight down while the handle whips past.
       final p = _easeIn((t - _windupEnd) / (_slamEnd - _windupEnd));
       offsetY = _lerp(-_raiseHeight, _overshoot, p);
-      angle = _lerp(_restAngle - 0.44, _restAngle + 0.16, p);
+      angle = _lerp(_restAngle - 0.75, _restAngle + 0.34, p);
       scaleX = _lerp(1, 1.06, p);
       scaleY = _lerp(1, 0.94, p);
     } else if (t < _impactEnd) {
-      // Impact: squash the head flat, tiny shake, settle to the target.
+      // Impact: squash the head flat while the handle wobbles from the recoil.
       final p = (t - _slamEnd) / (_impactEnd - _slamEnd);
       final pulse = sin(p * pi);
+      final wobble = sin(p * pi * 4) * 0.18 * (1 - p);
       offsetY = _lerp(_overshoot, 0, _easeOut(p));
-      angle = _restAngle + 0.16 * (1 - p);
+      angle = _restAngle + 0.34 * (1 - p) + wobble;
       scaleX = 1 + 0.26 * pulse;
       scaleY = 1 - 0.24 * pulse;
       shakeX = sin(p * pi * 3) * 4 * (1 - p);
     } else {
-      // Recover & vanish: lift away and fade out.
+      // Recover & vanish: handle keeps swinging slightly while the head lifts.
       final p = _easeIn((t - _impactEnd) / (1 - _impactEnd));
+      final settle = sin(p * pi * 2.4) * 0.12 * (1 - p);
       offsetY = _lerp(0, -_raiseHeight * 0.7, p);
-      angle = _restAngle - 0.12 * p;
+      angle = _restAngle - 0.18 * p + settle;
       scaleX = 1;
       scaleY = 1;
       opacity = (1 - p).clamp(0.0, 1.0);
