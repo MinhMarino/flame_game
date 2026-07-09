@@ -211,6 +211,7 @@ class AntEnemy extends SpriteAnimationComponent
     if (game == null || !game.acceptsGameplayInput) {
       return;
     }
+    game.triggerSwatterAt(position);
     takeDamage(1);
   }
 

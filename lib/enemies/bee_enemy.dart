@@ -189,6 +189,7 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     if (game == null || !game.acceptsGameplayInput) {
       return;
     }
+    game.triggerSwatterAt(position);
     BeeLifecycle.defeat(this);
   }
 

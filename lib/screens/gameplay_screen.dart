@@ -10,6 +10,7 @@ import '../services/audio_manager.dart';
 import '../services/level_progress_service.dart';
 import '../widgets/endless_spawn_test_bar.dart';
 import '../widgets/pause_menu_overlay.dart';
+import '../widgets/swatter_toggle_button.dart';
 import 'home_screen.dart';
 import 'level_complete_screen.dart';
 import 'level_failed_screen.dart';
@@ -194,6 +195,23 @@ class _GameplayScreenState extends State<GameplayScreen>
               top: topPadding + 8,
               left: 12,
               child: EndlessSpawnTestBar(game: _game),
+            ),
+          if (!widget.isLevelMode)
+            Positioned(
+              right: 12,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: ListenableBuilder(
+                  listenable: _game,
+                  builder: (context, _) => SwatterToggleButton(
+                    enabled: _game.canToggleSwatter,
+                    active: _game.swatterEnabled,
+                    onPressed: () =>
+                        _game.setSwatterEnabled(!_game.swatterEnabled),
+                  ),
+                ),
+              ),
             ),
         ],
       ),

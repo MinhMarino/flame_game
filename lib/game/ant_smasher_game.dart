@@ -18,6 +18,7 @@ import '../services/audio_manager.dart';
 import '../worlds/kitchen/data/kitchen_level_data.dart';
 import '../worlds/kitchen/kitchen_gameplay_controller.dart';
 import 'components/floating_text.dart';
+import 'components/fly_swatter_cursor.dart';
 import 'components/game_over_label.dart';
 import 'components/hearts_hud.dart';
 import 'level_session.dart';
@@ -56,6 +57,7 @@ class AntSmasherGame extends FlameGame
   late final TextComponent _hintText;
   late final GameOverLabel _gameOverText;
   late final HeartsHud _heartsHud;
+  late final FlySwatterCursor _flySwatterCursor;
 
   KitchenGameplayController? _kitchenController;
   LevelSession? _levelSession;
@@ -68,6 +70,7 @@ class AntSmasherGame extends FlameGame
   bool _gameOver = false;
   bool _levelEnded = false;
   EndlessEnemyFilter _endlessEnemyFilter = EndlessEnemyFilter.mixed;
+  bool _swatterEnabled = false;
 
   bool get isLevelMode => level != null;
   EndlessEnemyFilter get endlessEnemyFilter => _endlessEnemyFilter;
@@ -127,6 +130,7 @@ class AntSmasherGame extends FlameGame
       'bee_fly_sheet.png',
       'bee_smashed.png',
       'ant_smashed.png',
+      'fly_swatter.png',
     ]);
 
     _antWalkAnimation = _loadWalkAnimation('ant_walk_sheet.png');
@@ -189,8 +193,15 @@ class AntSmasherGame extends FlameGame
     );
 
     _gameOverText = GameOverLabel(position: Vector2.zero());
+    _flySwatterCursor = FlySwatterCursor();
 
-    addAll([_heartsHud, _scoreText, _hintText, _gameOverText]);
+    addAll([
+      _heartsHud,
+      _scoreText,
+      _hintText,
+      _gameOverText,
+      _flySwatterCursor,
+    ]);
 
     if (hasLayout) {
       _layoutHud(size);
@@ -441,6 +452,33 @@ class AntSmasherGame extends FlameGame
     notifyListeners();
   }
 
+  /// Endless-mode fly swatter cursor: a tilted, animated weapon that smacks
+  /// down at every tap location instead of the plain finger tap.
+  bool get swatterEnabled => _swatterEnabled;
+
+  bool get canToggleSwatter => isLoaded && !isLevelMode && !_gameOver;
+
+  void setSwatterEnabled(bool enabled) {
+    if (!canToggleSwatter || _swatterEnabled == enabled) {
+      return;
+    }
+    _swatterEnabled = enabled;
+    if (!enabled) {
+      _flySwatterCursor.reset();
+    }
+    notifyListeners();
+  }
+
+  /// Plays the fly-swatter smack animation at [position] (game coordinates)
+  /// when the swatter is enabled. Safe to call from enemy tap handlers and the
+  /// game-level background tap alike.
+  void triggerSwatterAt(Vector2 position) {
+    if (!_swatterEnabled || _gameOver || isPaused) {
+      return;
+    }
+    _flySwatterCursor.smackAt(position);
+  }
+
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
     if (enemy is AntEnemy) {
       return;
@@ -580,6 +618,7 @@ class AntSmasherGame extends FlameGame
     _gameOver = true;
     _gameOverText.isVisible = true;
     _hintText.text = 'Final score: $_score';
+    _flySwatterCursor.reset();
     _clearEnemies();
     notifyListeners();
   }
@@ -628,6 +667,7 @@ class AntSmasherGame extends FlameGame
     _updateLevelHud();
     _heartsHud.lives = _lives;
     _gameOverText.isVisible = false;
+    _flySwatterCursor.reset();
     _clearEnemies();
     notifyListeners();
   }
@@ -637,6 +677,8 @@ class AntSmasherGame extends FlameGame
     if (isPaused) {
       return;
     }
+
+    triggerSwatterAt(event.localPosition);
 
     if (isKitchenWorld) {
       _kitchenController?.handleNearMiss(event.localPosition);
