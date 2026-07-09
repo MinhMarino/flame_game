@@ -15,9 +15,13 @@ class FlySwatterCursor extends SpriteComponent
   FlySwatterCursor()
     : super(
         size: Vector2(135, 265),
-        anchor: const Anchor(0.36, 0.16),
+        anchor: const Anchor(0.64, 0.16),
         priority: 100,
       );
+
+  /// Horizontal flip factor. -1 mirrors the sprite so the handle rests on the
+  /// opposite side. Baked into the x scale every frame so it survives squash.
+  static const double _flipX = -1;
 
   /// Neutral display tilt of the sprite (radians).
   static const double _restAngle = -0.30;
@@ -139,12 +143,14 @@ class FlySwatterCursor extends SpriteComponent
     required double opacity,
     double shakeX = 0,
   }) {
-    this.angle = angle;
-    scale.setValues(scaleX, scaleY);
+    // Mirroring the sprite reverses perceived rotation, so negate the angle
+    // (and the horizontal shake) to keep the head slamming the same way.
+    this.angle = _flipX * angle;
+    scale.setValues(_flipX * scaleX, scaleY);
     this.opacity = opacity;
     position
       ..setFrom(_targetPosition)
-      ..x += shakeX
+      ..x += _flipX * shakeX
       ..y += offsetY;
   }
 
