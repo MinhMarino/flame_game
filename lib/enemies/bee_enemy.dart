@@ -190,7 +190,13 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
       return;
     }
     game.triggerSwatterAt(position);
-    BeeLifecycle.defeat(this);
+    // With the swatter equipped, the tap only winds up the swing; the bee
+    // shouldn't die until the head actually lands (handled by
+    // `applySwatterAreaDamage` at impact). Without the swatter, a bare tap
+    // still smashes instantly like before.
+    if (!game.swatterEnabled) {
+      BeeLifecycle.defeat(this);
+    }
   }
 
   static double _normalizeAngle(double angle) {

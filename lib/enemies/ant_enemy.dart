@@ -218,7 +218,13 @@ class AntEnemy extends SpriteAnimationComponent
       return;
     }
     game.triggerSwatterAt(position);
-    takeDamage(1);
+    // With the swatter equipped, the tap only winds up the swing; the ant
+    // shouldn't die until the head actually lands (handled by
+    // `applySwatterAreaDamage` at impact). Without the swatter, a bare tap
+    // still smashes instantly like before.
+    if (!game.swatterEnabled) {
+      takeDamage(1);
+    }
   }
 
   static double _normalizeAngle(double angle) {
