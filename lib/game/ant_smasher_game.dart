@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../enemies/ant_enemy.dart';
 import '../enemies/bee_enemy.dart';
+import '../enemies/bee_lifecycle.dart';
 import '../enemies/smashed_ant.dart';
 import '../enemies/smashed_bee.dart';
 import '../enemies/enemy_assets.dart';
@@ -477,6 +478,30 @@ class AntSmasherGame extends FlameGame
       return;
     }
     _flySwatterCursor.smackAt(position);
+  }
+
+  /// Smashes every ant/bee inside [radius] of [center], not just whichever
+  /// one happened to be under the tap. This is what makes the fly-swatter's
+  /// circular impact zone a real wide-area attack instead of a purely
+  /// cosmetic ring — called exactly once, right as the swatter head lands.
+  void applySwatterAreaDamage(Vector2 center, double radius) {
+    if (_gameOver || isPaused) {
+      return;
+    }
+
+    for (final ant in children.whereType<AntEnemy>().toList()) {
+      if (ant.isMounted &&
+          ant.isAlive &&
+          ant.position.distanceTo(center) <= radius) {
+        ant.takeDamage(ant.currentHp);
+      }
+    }
+
+    for (final bee in children.whereType<BeeEnemy>().toList()) {
+      if (bee.isMounted && bee.position.distanceTo(center) <= radius) {
+        BeeLifecycle.defeat(bee);
+      }
+    }
   }
 
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
