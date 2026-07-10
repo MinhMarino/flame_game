@@ -9,6 +9,7 @@ import '../level_data/world_registry.dart';
 import '../services/audio_manager.dart';
 import '../services/level_progress_service.dart';
 import '../widgets/endless_spawn_test_bar.dart';
+import '../widgets/lollipop_button.dart';
 import '../widgets/pause_menu_overlay.dart';
 import '../widgets/swatter_toggle_button.dart';
 import 'home_screen.dart';
@@ -213,6 +214,24 @@ class _GameplayScreenState extends State<GameplayScreen>
                 ),
               ),
             ),
+          Positioned(
+            bottom: MediaQuery.paddingOf(context).bottom + 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: ListenableBuilder(
+                listenable: _game,
+                builder: (context, _) => LollipopButton(
+                  enabled:
+                      _game.canPlaceLollipop || _game.lollipopPlacementArmed,
+                  armed: _game.lollipopPlacementArmed,
+                  onPressed: () => _game.setLollipopPlacementArmed(
+                    !_game.lollipopPlacementArmed,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

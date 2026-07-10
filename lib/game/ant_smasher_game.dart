@@ -14,6 +14,7 @@ import '../enemies/smashed_bee.dart';
 import '../enemies/enemy_assets.dart';
 import '../enemies/enemy_factory.dart';
 import '../enemies/spawned_enemy.dart';
+import '../items/lollipop_item.dart';
 import '../level_data/models/level_models.dart';
 import '../level_data/world_registry.dart';
 import '../services/asset_preloader.dart';
@@ -74,6 +75,8 @@ class AntSmasherGame extends FlameGame
   bool _levelEnded = false;
   EndlessEnemyFilter _endlessEnemyFilter = EndlessEnemyFilter.mixed;
   bool _swatterEnabled = false;
+  LollipopItem? _activeLollipop;
+  bool _lollipopPlacementArmed = false;
 
   bool get isLevelMode => level != null;
   EndlessEnemyFilter get endlessEnemyFilter => _endlessEnemyFilter;
@@ -513,6 +516,53 @@ class AntSmasherGame extends FlameGame
     }
   }
 
+  /// Lollipop decoy: a temporary placeable bait that pulls nearby Ants and
+  /// Bees off their path toward the end of the level. Only one can be
+  /// active at a time — it must be destroyed (or the level restarted)
+  /// before another can be placed.
+  LollipopItem? get activeLollipop {
+    final lollipop = _activeLollipop;
+    if (lollipop == null || !lollipop.isAlive) {
+      return null;
+    }
+    return lollipop;
+  }
+
+  bool get hasActiveLollipop => activeLollipop != null;
+
+  bool get lollipopPlacementArmed => _lollipopPlacementArmed;
+
+  bool get canPlaceLollipop =>
+      isLoaded && !_gameOver && !_levelEnded && !hasActiveLollipop;
+
+  /// Arms/disarms "place Lollipop on next tap" mode. Called by the Lollipop
+  /// button overlay; the next tap on the field then places it.
+  void setLollipopPlacementArmed(bool armed) {
+    if (armed && !canPlaceLollipop) {
+      return;
+    }
+    if (_lollipopPlacementArmed == armed) {
+      return;
+    }
+    _lollipopPlacementArmed = armed;
+    notifyListeners();
+  }
+
+  /// Places a Lollipop at [position] (game/local coordinates) if allowed.
+  /// Returns whether placement succeeded.
+  bool placeLollipopAt(Vector2 position) {
+    if (!canPlaceLollipop) {
+      return false;
+    }
+
+    final lollipop = LollipopItem(position: position.clone());
+    _activeLollipop = lollipop;
+    _lollipopPlacementArmed = false;
+    add(lollipop);
+    notifyListeners();
+    return true;
+  }
+
   void onSpawnedEnemyDefeated(SpawnedEnemy enemy, {bool skipScore = false}) {
     if (enemy is AntEnemy) {
       return;
@@ -666,11 +716,14 @@ class AntSmasherGame extends FlameGame
                   c is BeeEnemy ||
                   c is AntEnemy ||
                   c is SmashedBee ||
-                  c is SmashedAnt,
+                  c is SmashedAnt ||
+                  c is LollipopItem,
             )
             .toList()) {
       enemy.removeFromParent();
     }
+    _activeLollipop = null;
+    _lollipopPlacementArmed = false;
   }
 
   @override
@@ -709,6 +762,11 @@ class AntSmasherGame extends FlameGame
   @override
   void onTapDown(TapDownEvent event) {
     if (isPaused) {
+      return;
+    }
+
+    if (_lollipopPlacementArmed) {
+      placeLollipopAt(event.localPosition);
       return;
     }
 

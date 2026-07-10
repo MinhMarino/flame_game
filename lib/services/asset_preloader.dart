@@ -20,6 +20,11 @@ abstract final class AssetPreloader {
     'bee_smashed.png',
     'ant_smashed.png',
     'fly_swatter.png',
+    'lollipop_100.png',
+    'lollipop_75.png',
+    'lollipop_50.png',
+    'lollipop_25.png',
+    'lollipop_0.png',
   ];
 
   static bool _preloaded = false;

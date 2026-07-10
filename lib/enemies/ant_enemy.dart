@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 
 import '../game/ant_smasher_game.dart';
+import '../items/lollipop_item.dart';
 import 'ant_lifecycle.dart';
 import 'models/enemy_kind.dart';
 import 'models/enemy_stats.dart';
@@ -41,6 +42,9 @@ class AntEnemy extends SpriteAnimationComponent
 
   /// Sprite sheet faces upward at rotation 0; offset aligns art with heading.
   static const _spriteAngleOffset = pi / 2;
+
+  /// Lollipop decoy damage: 3 HP/second while in melee range.
+  static const double _lollipopDamagePerSecond = 3;
 
   @override
   final EnemyStats stats;
@@ -108,11 +112,44 @@ class AntEnemy extends SpriteAnimationComponent
     }
 
     _aliveTime += dt;
+
+    final lollipop = game.activeLollipop;
+    if (lollipop != null &&
+        position.distanceTo(lollipop.position) <=
+            LollipopItem.detectionRadius) {
+      _attackLollipop(lollipop, dt, game);
+      return;
+    }
+
     _updateSteering(dt, game);
     _rotateTowardTarget(dt);
     _moveForward(dt);
     _enforceBounds(game);
     _checkEscaped(game);
+  }
+
+  /// While a Lollipop decoy is within sensing range, ants abandon their
+  /// usual downward path and beeline for it instead. Once in melee range
+  /// they plant themselves in place and chip away at its HP rather than
+  /// continuing toward the end of the level.
+  void _attackLollipop(LollipopItem lollipop, double dt, AntSmasherGame game) {
+    final toTarget = lollipop.position - position;
+    final distance = toTarget.length;
+    final attackRange = lollipop.attackRadius + size.x * 0.5;
+
+    if (distance > attackRange) {
+      _targetHeading = atan2(toTarget.y, toTarget.x);
+      _rotateTowardTarget(dt);
+      _moveForward(dt);
+      _enforceBounds(game);
+      return;
+    }
+
+    if (distance > 0.001) {
+      _heading = atan2(toTarget.y, toTarget.x);
+      angle = _heading + _spriteAngleOffset;
+    }
+    lollipop.takeDamage(_lollipopDamagePerSecond * dt);
   }
 
   void _updateSteering(double dt, AntSmasherGame game) {

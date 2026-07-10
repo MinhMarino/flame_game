@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 
 import '../game/ant_smasher_game.dart';
+import '../items/lollipop_item.dart';
 import 'bee_lifecycle.dart';
 import 'enemy_assets.dart';
 
@@ -33,6 +34,9 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
   }
 
   static const _spriteAngleOffset = pi / 2;
+
+  /// Lollipop decoy damage: 3 HP/second while in melee range.
+  static const double _lollipopDamagePerSecond = 3;
 
   final Random random;
   final bool isBoss;
@@ -90,6 +94,16 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     }
 
     _aliveTime += dt;
+
+    final lollipop = game.activeLollipop;
+    if (lollipop != null &&
+        position.distanceTo(lollipop.position) <=
+            LollipopItem.detectionRadius) {
+      _attackLollipop(lollipop, dt, game);
+      super.update(dt * _flapSpeed);
+      return;
+    }
+
     _updateBurst(dt);
     _updateCourse(dt);
     _updateSteering(dt);
@@ -100,6 +114,35 @@ class BeeEnemy extends SpriteAnimationComponent with TapCallbacks {
     _enforceBounds(game);
     _checkEscaped(game);
     super.update(dt * _flapSpeed);
+  }
+
+  /// While a Lollipop decoy is within sensing range, bees abandon their
+  /// usual downward flight and beeline for it instead. Once in melee range
+  /// they hover in place (keeping the idle wing-flap/bob) and chip away at
+  /// its HP rather than continuing toward the end of the level.
+  void _attackLollipop(LollipopItem lollipop, double dt, AntSmasherGame game) {
+    final toTarget = lollipop.position - position;
+    final distance = toTarget.length;
+    final attackRange = lollipop.attackRadius + size.x * 0.5;
+
+    if (distance > attackRange) {
+      _targetHeading = atan2(toTarget.y, toTarget.x);
+      _rotateTowardTarget(dt);
+      _desiredSpeed = _baseSpeed;
+      _updateSpeed(dt);
+      _moveForward(dt);
+      _updateBob(dt);
+      _enforceBounds(game);
+      return;
+    }
+
+    _currentSpeed = 0;
+    if (distance > 0.001) {
+      _heading = atan2(toTarget.y, toTarget.x);
+      angle = _heading + _spriteAngleOffset;
+    }
+    _updateBob(dt);
+    lollipop.takeDamage(_lollipopDamagePerSecond * dt);
   }
 
   void _updateBurst(double dt) {
