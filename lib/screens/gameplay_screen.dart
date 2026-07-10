@@ -197,38 +197,38 @@ class _GameplayScreenState extends State<GameplayScreen>
               left: 12,
               child: EndlessSpawnTestBar(game: _game),
             ),
-          if (!widget.isLevelMode)
-            Positioned(
-              right: 12,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: ListenableBuilder(
-                  listenable: _game,
-                  builder: (context, _) => SwatterToggleButton(
-                    enabled: _game.canToggleSwatter,
-                    active: _game.swatterEnabled,
-                    onPressed: () =>
-                        _game.setSwatterEnabled(!_game.swatterEnabled),
-                  ),
-                ),
-              ),
-            ),
           Positioned(
-            bottom: MediaQuery.paddingOf(context).bottom + 16,
-            left: 0,
-            right: 0,
+            right: 12,
+            top: 0,
+            bottom: 0,
             child: Center(
-              child: ListenableBuilder(
-                listenable: _game,
-                builder: (context, _) => LollipopButton(
-                  enabled:
-                      _game.canPlaceLollipop || _game.lollipopPlacementArmed,
-                  armed: _game.lollipopPlacementArmed,
-                  onPressed: () => _game.setLollipopPlacementArmed(
-                    !_game.lollipopPlacementArmed,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!widget.isLevelMode)
+                    ListenableBuilder(
+                      listenable: _game,
+                      builder: (context, _) => SwatterToggleButton(
+                        enabled: _game.canToggleSwatter,
+                        active: _game.swatterEnabled,
+                        onPressed: () =>
+                            _game.setSwatterEnabled(!_game.swatterEnabled),
+                      ),
+                    ),
+                  if (!widget.isLevelMode) const SizedBox(height: 12),
+                  ListenableBuilder(
+                    listenable: _game,
+                    builder: (context, _) => LollipopButton(
+                      enabled:
+                          _game.canPlaceLollipop ||
+                          _game.lollipopPlacementArmed,
+                      armed: _game.lollipopPlacementArmed,
+                      onPressed: () => _game.setLollipopPlacementArmed(
+                        !_game.lollipopPlacementArmed,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
