@@ -16,10 +16,7 @@ abstract final class AntLifecycle {
     }
 
     game.add(
-      SmashedAnt(
-        position: ant.position.clone(),
-        size: ant.size.clone(),
-      ),
+      SmashedAnt(position: ant.position.clone(), size: ant.size.clone()),
     );
     game.registerAntHit(ant);
     ant.removeFromParent();

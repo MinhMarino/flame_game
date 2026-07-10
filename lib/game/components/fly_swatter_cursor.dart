@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/audio_manager.dart';
 import '../ant_smasher_game.dart';
 
 /// Classic flat fly-swatter sprite that plays a cartoony "swing & slam" at
@@ -28,7 +29,11 @@ class FlySwatterCursor extends SpriteComponent
   /// Horizontal flip factor. Set to -1 to mirror the sprite so the handle
   /// rests on the opposite side. Baked into the x scale/offsets every frame
   /// so it survives squash and the swing arc.
-  static const double _flipX = 1;
+  ///
+  /// -1 mirrors the whole swing to the right-hand side (handle winds up on
+  /// the right, head sweeps in from the right), matching a right-handed
+  /// swing instead of the default left-handed one.
+  static const double _flipX = -1;
 
   /// Neutral display tilt of the sprite (radians) when idle.
   static const double _restAngle = -0.18;
@@ -101,6 +106,10 @@ class FlySwatterCursor extends SpriteComponent
     _impactTriggered = false;
     _elapsed = 0;
     isVisible = true;
+
+    // Whoosh plays right as the swing kicks off (wind-up + slam) so it
+    // reads as the sound of the swatter cutting through the air.
+    AudioManager.instance.playSfx('swing');
 
     // Telegraph the landing zone immediately so the wide hit area reads
     // clearly before the head actually arrives, timed to finish exactly as
@@ -227,6 +236,9 @@ class FlySwatterCursor extends SpriteComponent
         radius: _impactRingRadius,
       ),
     );
+    // Thud plays the instant the head actually lands, matching the visual
+    // flash and the real area damage below.
+    AudioManager.instance.playSfx('swat_impact');
     // The flash is purely visual; this is what actually smashes every enemy
     // caught inside the wide hit zone, not just the one under the tap.
     game.applySwatterAreaDamage(_targetPosition, _impactRingRadius);

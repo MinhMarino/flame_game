@@ -30,7 +30,11 @@ class AntEnemy extends SpriteAnimationComponent
        _zigzagPhase = random.nextDouble() * pi * 2,
        _turnRate = _initialTurnRate(random, weaveIntensity),
        _wanderRate = 0.7 + random.nextDouble() * 0.8,
-       super(size: displaySize, anchor: Anchor.center, position: startPosition) {
+       super(
+         size: displaySize,
+         anchor: Anchor.center,
+         position: startPosition,
+       ) {
     _pickNextWanderTarget();
     angle = _heading + _spriteAngleOffset;
   }
@@ -120,7 +124,9 @@ class AntEnemy extends SpriteAnimationComponent
     final steering = _computeSteeringVector(game);
     var desiredHeading = atan2(steering.y, steering.x);
 
-    final zigzag = sin(_aliveTime * (2.4 + weaveIntensity * 1.8) + _zigzagPhase);
+    final zigzag = sin(
+      _aliveTime * (2.4 + weaveIntensity * 1.8) + _zigzagPhase,
+    );
     desiredHeading += zigzag * _zigzagStrength;
 
     _targetHeading = _smoothHeading(desiredHeading, dt);

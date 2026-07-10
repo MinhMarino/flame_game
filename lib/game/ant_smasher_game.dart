@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flame/components.dart';
@@ -15,6 +16,7 @@ import '../enemies/enemy_factory.dart';
 import '../enemies/spawned_enemy.dart';
 import '../level_data/models/level_models.dart';
 import '../level_data/world_registry.dart';
+import '../services/asset_preloader.dart';
 import '../services/audio_manager.dart';
 import '../worlds/kitchen/data/kitchen_level_data.dart';
 import '../worlds/kitchen/kitchen_gameplay_controller.dart';
@@ -126,13 +128,11 @@ class AntSmasherGame extends FlameGame
       _levelSession!.syncLives(lives: _lives, max: _maxLives);
     }
 
-    await images.loadAll([
-      'ant_walk_sheet.png',
-      'bee_fly_sheet.png',
-      'bee_smashed.png',
-      'ant_smashed.png',
-      'fly_swatter.png',
-    ]);
+    // Normally already warm from the app's loading screen (see
+    // AssetPreloader/LoadingScreen); this is an instant no-op then. Kept as
+    // a defensive fallback so gameplay never breaks if that screen was
+    // ever skipped (e.g. a future deep link straight into gameplay).
+    await AssetPreloader.preloadAll();
 
     _antWalkAnimation = _loadWalkAnimation('ant_walk_sheet.png');
     _beeFlyAnimation = _loadBeeFlyAnimation();
@@ -207,6 +207,16 @@ class AntSmasherGame extends FlameGame
     if (hasLayout) {
       _layoutHud(size);
     }
+
+    // `canToggleSwatter`/`canPause` etc. flip the instant `isLoaded` becomes
+    // true (right after this method returns), but nothing else notifies the
+    // UI of that change. Without this, overlay widgets like the swatter
+    // toggle button (built eagerly alongside the GameWidget, not gated on
+    // load) stay stuck showing their pre-load disabled state until some
+    // unrelated event happens to call notifyListeners() later - e.g. the
+    // player defeating their first enemy. Notify right away so the button
+    // is usable the instant the game is ready, with no enemy kill required.
+    notifyListeners();
   }
 
   String _initialHintText() {
@@ -334,7 +344,8 @@ class AntSmasherGame extends FlameGame
 
   void _updateLevelHud() {
     final session = _levelSession!;
-    final isDefend = session.level.objective.type == LevelObjectiveType.defendBase;
+    final isDefend =
+        session.level.objective.type == LevelObjectiveType.defendBase;
 
     if (isDefend) {
       _scoreText.text = session.countdownDisplayText;
@@ -362,8 +373,9 @@ class AntSmasherGame extends FlameGame
       return false;
     }
 
-    final activeEnemies =
-        children.where((c) => c is AntEnemy || c is BeeEnemy).length;
+    final activeEnemies = children
+        .where((c) => c is AntEnemy || c is BeeEnemy)
+        .length;
     if (isLevelMode) {
       return activeEnemies < level!.maxSimultaneousEnemies;
     }
@@ -418,10 +430,7 @@ class AntSmasherGame extends FlameGame
     add(
       _enemyFactory.createAnt(
         speed: speed,
-        startPosition: Vector2(
-          _random.nextDouble() * size.x,
-          -antSize * 0.5,
-        ),
+        startPosition: Vector2(_random.nextDouble() * size.x, -antSize * 0.5),
       ),
     );
   }

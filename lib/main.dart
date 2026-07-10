@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/loading_screen.dart';
 import 'services/level_progress_service.dart';
 
 void main() async {
@@ -28,7 +28,7 @@ class FlameGameApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const LoadingScreen(),
     );
   }
 }

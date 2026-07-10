@@ -32,9 +32,18 @@ void main() {
     });
 
     test('non-boss levels use tower defense objectives', () {
-      expect(LevelCatalog.levelById(1).objective.type, LevelObjectiveType.defendBase);
-      expect(LevelCatalog.levelById(9).objective.type, LevelObjectiveType.defendBase);
-      expect(LevelCatalog.levelById(11).objective.type, LevelObjectiveType.defendBase);
+      expect(
+        LevelCatalog.levelById(1).objective.type,
+        LevelObjectiveType.defendBase,
+      );
+      expect(
+        LevelCatalog.levelById(9).objective.type,
+        LevelObjectiveType.defendBase,
+      );
+      expect(
+        LevelCatalog.levelById(11).objective.type,
+        LevelObjectiveType.defendBase,
+      );
       expect(LevelCatalog.levelById(1).countdownSeconds, 60);
     });
 

@@ -43,9 +43,8 @@ class KitchenGameplayController {
   bool get isBossLevel => config.isBossLevel;
   bool get bossAlive => _bossSpawned && !_bossDefeated;
 
-  int get _activeBabyCount => game.spawnedEnemies
-      .where((e) => e.kind == EnemyKind.babySpider)
-      .length;
+  int get _activeBabyCount =>
+      game.spawnedEnemies.where((e) => e.kind == EnemyKind.babySpider).length;
 
   int get activeEnemyCount => game.spawnedEnemies.length;
 

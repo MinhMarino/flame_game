@@ -92,7 +92,9 @@ class _SpawnTestButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: enabled || label == 'Hide' || label == 'Spawn' ? onPressed : null,
+        onTap: enabled || label == 'Hide' || label == 'Spawn'
+            ? onPressed
+            : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

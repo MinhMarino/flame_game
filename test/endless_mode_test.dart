@@ -1,12 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flame_game/main.dart';
 
+import 'test_helpers.dart';
+
 void main() {
-  testWidgets('endless mode runs without throwing', (WidgetTester tester) async {
+  testWidgets('endless mode runs without throwing', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const FlameGameApp());
-    await tester.pump();
+    await pumpUntilFound(tester, find.text('Endless Mode'));
 
     await tester.tap(find.text('Endless Mode'));
     await tester.pump();

@@ -22,9 +22,7 @@ class KitchenLevelData {
       lives: 8,
       enemySpeedMultiplier: 0.9,
       antWeaveIntensity: 0.55,
-      spawnTable: [
-        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1),
-      ],
+      spawnTable: [EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1)],
       starRequirements: StarRequirements(
         oneStarScore: 0,
         twoStarScore: 0,
@@ -45,9 +43,7 @@ class KitchenLevelData {
       lives: 8,
       enemySpeedMultiplier: 1.0,
       antWeaveIntensity: 0.62,
-      spawnTable: [
-        EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1),
-      ],
+      spawnTable: [EnemySpawnEntry(kind: EnemyKind.blackAnt, weight: 1)],
       starRequirements: StarRequirements(
         oneStarScore: 0,
         twoStarScore: 0,

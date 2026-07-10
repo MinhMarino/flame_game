@@ -155,8 +155,7 @@ class LevelSession {
         bossDefeated
             ? 'All spiders defeated!'
             : 'Defeat the Giant Spider and baby spiders',
-      LevelObjectiveType.defendBase =>
-        'Base HP: $livesRemaining / $maxLives',
+      LevelObjectiveType.defendBase => 'Base HP: $livesRemaining / $maxLives',
     };
   }
 
