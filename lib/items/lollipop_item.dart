@@ -3,6 +3,7 @@ import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
 
 import '../game/ant_smasher_game.dart';
+import '../game/components/attraction_aura.dart';
 
 /// A single HP-gated sprite swap threshold for [LollipopItem].
 class _LollipopStage {
@@ -60,6 +61,13 @@ class LollipopItem extends SpriteComponent
   bool _destroyed = false;
   String? _currentAsset;
 
+  /// Purely cosmetic "sweet smell" aura that visualizes [detectionRadius].
+  /// Owned exclusively by this component: it starts the moment the Lollipop
+  /// loads, silently follows along since it's a normal child component, and
+  /// is torn down as soon as the Lollipop is destroyed. It never touches HP,
+  /// damage, or enemy targeting.
+  AttractionAuraComponent? _aura;
+
   double get currentHp => _currentHp;
 
   double get hpFraction => (_currentHp / maxHp).clamp(0, 1);
@@ -76,6 +84,11 @@ class LollipopItem extends SpriteComponent
   Future<void> onLoad() async {
     await super.onLoad();
     _applySpriteForHp();
+
+    final aura = AttractionAuraComponent(radius: detectionRadius)
+      ..position = size / 2;
+    _aura = aura;
+    add(aura);
   }
 
   /// Applies [amount] HP of damage (fractional, since damage is expressed
@@ -119,6 +132,13 @@ class LollipopItem extends SpriteComponent
     _destroyed = true;
     _currentAsset = 'lollipop_0.png';
     sprite = Sprite(game.images.fromCache('lollipop_0.png'));
+
+    // The attraction is over the instant HP hits zero (enemies already stop
+    // targeting via `isAlive`), so the aura that visualizes that attraction
+    // should disappear immediately too, rather than lingering through the
+    // pop/fade-out death animation below.
+    _aura?.removeFromParent();
+    _aura = null;
 
     add(
       ScaleEffect.by(
